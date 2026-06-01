@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Import Lounge — Menu</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0c10; --bg2:#101218; --card:#161922; --line:#252a36;
+    --txt:#f4f5f8; --muted:#8b91a0; --gold:#e9c873; --gold2:#caa44d;
+    --shadow:0 10px 30px rgba(0,0,0,.45);
+    --safe-t:env(safe-area-inset-top,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  body{padding-bottom:48px;overflow-x:hidden;}
+  img{display:block;}
+
+  /* ---------- HERO ---------- */
+  .hero{position:relative;min-height:230px;display:flex;flex-direction:column;
+    justify-content:flex-end;padding:18px 18px 16px;overflow:hidden;}
+  .hero-bg{position:absolute;inset:0;z-index:0;background:
+    linear-gradient(180deg,rgba(11,12,16,.25) 0%,rgba(11,12,16,.72) 65%,var(--bg) 100%),
+    linear-gradient(135deg,#2b2415,#13141a);background-size:cover;background-position:center;}
+  .hero-bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+    opacity:0;transition:opacity .6s ease;z-index:-1;}
+  .hero-bg img.loaded{opacity:.55;}
+  .hero-top{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-start;
+    padding-top:var(--safe-t);}
+  .brand{display:flex;align-items:center;gap:11px;}
+  .logo{width:46px;height:46px;border-radius:14px;flex:0 0 46px;
+    background:linear-gradient(135deg,var(--gold),var(--gold2));
+    display:flex;align-items:center;justify-content:center;font-size:24px;
+    box-shadow:0 6px 18px rgba(233,200,115,.35);}
+  .brand h1{font-size:22px;font-weight:800;margin:0;letter-spacing:.2px;}
+  .brand p{margin:2px 0 0;font-size:10.5px;color:var(--gold);letter-spacing:2.5px;
+    text-transform:uppercase;font-weight:600;}
+  .lang{display:flex;gap:3px;background:rgba(20,22,30,.7);backdrop-filter:blur(8px);
+    border:1px solid var(--line);border-radius:22px;padding:3px;}
+  .lang button{border:0;background:transparent;color:var(--muted);font-family:inherit;
+    font-size:13px;font-weight:700;padding:6px 12px;border-radius:18px;cursor:pointer;transition:.2s;}
+  .lang button.on{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#191307;}
+  .hero-meta{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;
+    background:rgba(20,22,30,.6);backdrop-filter:blur(8px);border:1px solid var(--line);
+    padding:6px 11px;border-radius:20px;color:#d7dae2;}
+  .chip.gold{color:var(--gold);border-color:rgba(233,200,115,.35);}
+
+  /* ---------- LOYALTY STRIP ---------- */
+  .promo{margin:14px 14px 0;display:flex;align-items:center;gap:13px;
+    background:linear-gradient(120deg,#221c10,#14161d);border:1px solid var(--line);
+    border-radius:18px;padding:13px 15px;box-shadow:var(--shadow);}
+  .promo .ic{font-size:26px;}
+  .promo b{font-size:14px;}
+  .promo small{display:block;color:var(--muted);font-size:12px;margin-top:2px;line-height:1.35;}
+
+  /* ---------- STICKY SEARCH + TABS ---------- */
+  .stick{position:sticky;top:0;z-index:30;background:rgba(11,12,16,.82);
+    backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding-top:8px;}
+  .search{display:flex;align-items:center;gap:9px;margin:6px 14px 8px;background:var(--card);
+    border:1px solid var(--line);border-radius:14px;padding:11px 14px;transition:.2s;}
+  .search:focus-within{border-color:rgba(233,200,115,.5);}
+  .search input{flex:1;border:0;background:transparent;color:var(--txt);font-size:15px;
+    font-family:inherit;outline:none;}
+  .search .si{color:var(--muted);font-size:16px;}
+  .search .clr{color:var(--muted);font-size:18px;cursor:pointer;display:none;}
+  .tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 14px 11px;scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--muted);
+    border-radius:22px;padding:9px 16px;font-size:13.5px;font-weight:700;font-family:inherit;
+    cursor:pointer;white-space:nowrap;transition:.2s;}
+  .tab.on{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#191307;
+    border-color:transparent;box-shadow:0 4px 14px rgba(233,200,115,.3);}
+
+  /* ---------- SECTIONS / CARDS ---------- */
+  /* Featured rail */
+  .feat-wrap{padding:16px 0 2px;}
+  .feat-head{display:flex;align-items:center;gap:7px;padding:0 18px;font-size:12.5px;
+    font-weight:800;color:var(--gold);letter-spacing:1px;text-transform:uppercase;}
+  .feat-rail{display:flex;gap:12px;overflow-x:auto;padding:12px 14px 6px;scrollbar-width:none;
+    scroll-snap-type:x mandatory;}
+  .feat-rail::-webkit-scrollbar{display:none;}
+  .feat-card{flex:0 0 196px;scroll-snap-align:start;background:var(--card);border:1px solid var(--line);
+    border-radius:18px;overflow:hidden;cursor:pointer;transition:transform .15s;}
+  .feat-card:active{transform:scale(.97);}
+  .feat-img{position:relative;height:118px;display:flex;align-items:center;justify-content:center;font-size:42px;}
+  .feat-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s;}
+  .feat-img img.loaded{opacity:1;}
+  .feat-badge{position:absolute;top:8px;left:8px;z-index:2;background:rgba(11,12,16,.7);
+    backdrop-filter:blur(6px);color:var(--gold);font-size:10.5px;font-weight:700;
+    padding:4px 9px;border-radius:20px;letter-spacing:.5px;}
+  .feat-meta{padding:10px 13px 13px;}
+  .feat-meta .nm{font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .feat-meta .pr{margin-top:6px;font-size:14.5px;font-weight:800;color:var(--gold);}
+
+  .section{padding:4px 14px 2px;}
+  .section h2{font-size:19px;font-weight:800;margin:20px 4px 12px;display:flex;align-items:center;gap:9px;}
+  .section h2 .bar{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent);}
+  .card{display:flex;gap:13px;background:var(--card);border:1px solid var(--line);
+    border-radius:18px;padding:11px;margin-bottom:11px;align-items:stretch;cursor:pointer;
+    transition:transform .15s ease, border-color .2s;opacity:0;transform:translateY(14px);}
+  .card.in{opacity:1;transform:none;}
+  .card:active{transform:scale(.98);}
+  .thumb{position:relative;width:96px;height:96px;flex:0 0 96px;border-radius:13px;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;font-size:36px;}
+  .thumb .skel{position:absolute;inset:0;background:linear-gradient(100deg,#1c2029 30%,#272c38 50%,#1c2029 70%);
+    background-size:200% 100%;animation:sh 1.2s infinite;}
+  @keyframes sh{from{background-position:200% 0;}to{background-position:-200% 0;}}
+  .thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s;}
+  .thumb img.loaded{opacity:1;}
+  .info{flex:1;display:flex;flex-direction:column;justify-content:center;min-width:0;}
+  .info .nm{font-size:16px;font-weight:700;line-height:1.2;}
+  .info .ds{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.35;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .info .row{margin-top:8px;display:flex;align-items:center;justify-content:space-between;}
+  .info .pr{font-size:15.5px;font-weight:800;color:var(--gold);}
+  .info .go{color:var(--muted);font-size:13px;}
+  .empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:15px;}
+
+  .foot{text-align:center;color:var(--muted);font-size:12px;padding:28px 16px 8px;}
+  .foot b{color:var(--gold);}
+
+  /* ---------- BOTTOM SHEET ---------- */
+  .backdrop{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);
+    opacity:0;pointer-events:none;transition:opacity .25s;}
+  .backdrop.show{opacity:1;pointer-events:auto;}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--bg2);
+    border-radius:24px 24px 0 0;border-top:1px solid var(--line);
+    transform:translateY(102%);transition:transform .32s cubic-bezier(.22,1,.36,1);
+    max-height:88vh;overflow:hidden;display:flex;flex-direction:column;}
+  .sheet.show{transform:none;}
+  .handle{width:42px;height:5px;border-radius:3px;background:#3a4150;margin:10px auto 4px;}
+  .sheet-img{position:relative;width:100%;height:230px;background:#1c2029;overflow:hidden;}
+  .sheet-img img{width:100%;height:100%;object-fit:cover;}
+  .sheet-emoji{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:70px;}
+  .sheet-body{padding:16px 20px 26px;overflow-y:auto;}
+  .sheet-body .cat{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);font-weight:700;}
+  .sheet-body h3{font-size:23px;font-weight:800;margin:6px 0 0;}
+  .sheet-body .desc{color:#c4c9d4;font-size:14.5px;line-height:1.5;margin-top:10px;}
+  .sheet-price{display:flex;align-items:center;justify-content:space-between;margin-top:18px;
+    padding-top:16px;border-top:1px solid var(--line);}
+  .sheet-price .lbl{color:var(--muted);font-size:13px;}
+  .sheet-price .val{font-size:24px;font-weight:800;color:var(--gold);}
+
+  /* ---------- ORDER MODE ---------- */
+  .opt-group{margin-top:16px;}
+  .opt-group .t{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;
+    font-weight:700;margin-bottom:8px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip-opt{border:1.5px solid var(--line);background:var(--card);color:var(--txt);border-radius:20px;
+    padding:8px 14px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:.15s;}
+  .chip-opt.on{border-color:var(--gold);background:#1c1810;color:var(--gold);}
+  .qty{display:flex;align-items:center;gap:14px;margin-top:18px;}
+  .qty .lbl{color:var(--muted);font-size:14px;flex:1;}
+  .qty button{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);
+    color:var(--txt);font-size:22px;font-weight:800;font-family:inherit;cursor:pointer;}
+  .qty .n{min-width:30px;text-align:center;font-size:18px;font-weight:800;}
+  .addbtn{width:100%;margin-top:18px;border:0;border-radius:14px;padding:15px;font-size:16px;font-weight:800;
+    font-family:inherit;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#191307;cursor:pointer;}
+  .addbtn:active{transform:scale(.99);}
+  .cartbar{position:fixed;left:0;right:0;bottom:0;z-index:45;background:linear-gradient(135deg,var(--gold),var(--gold2));
+    color:#191307;display:none;align-items:center;justify-content:space-between;
+    padding:15px 20px calc(15px + env(safe-area-inset-bottom,0px));font-weight:800;cursor:pointer;
+    box-shadow:0 -6px 20px rgba(0,0,0,.4);}
+  .cartbar.show{display:flex;}
+  .cartbar .c1{display:flex;align-items:center;gap:10px;font-size:15px;}
+  .cartbar .badge{background:#191307;color:var(--gold);border-radius:20px;padding:2px 10px;font-size:13px;}
+  .cart-row{display:flex;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);}
+  .cart-row .nm{flex:1;font-weight:600;}
+  .cart-row .nm small{display:block;color:var(--muted);font-size:12px;font-weight:400;margin-top:2px;}
+  .cart-row .pr{font-weight:800;color:var(--gold);}
+  .cart-row .rm{color:#e2685f;font-size:18px;cursor:pointer;padding:0 6px;}
+  .cart-total{display:flex;justify-content:space-between;font-size:18px;font-weight:800;margin-top:16px;}
+  .cart-total .v{color:var(--gold);}
+</style>
+</head>
+<body>
+  <div class="hero">
+    <div class="hero-bg" id="heroBg"></div>
+    <div class="hero-top">
+      <div class="brand">
+        <div class="logo">🥃</div>
+        <div><h1 id="venue">Import Lounge</h1><p>Hookah · Bar · Kitchen</p></div>
+      </div>
+      <div class="lang">
+        <button id="lng-ru" class="on" onclick="setLang('ru')">RU</button>
+        <button id="lng-uz" onclick="setLang('uz')">UZ</button>
+      </div>
+    </div>
+    <div class="hero-meta">
+      <span class="chip gold">★ 4.9</span>
+      <span class="chip" id="m-open">🕒 12:00 – 02:00</span>
+      <span class="chip" id="m-loc">📍 Tashkent</span>
+    </div>
+  </div>
+
+  <div class="promo">
+    <div class="ic">🎁</div>
+    <div><b id="promo-t">Копите кешбэк и получайте бонусы</b>
+      <small id="promo-s">Регистрируйтесь в боте — скидки до 20% и подарок на день рождения</small></div>
+  </div>
+
+  <div class="stick">
+    <div class="search">
+      <span class="si">🔎</span>
+      <input id="q" oninput="render()" placeholder="Поиск..." />
+      <span class="clr" id="clr" onclick="clearSearch()">✕</span>
+    </div>
+    <div class="tabs" id="tabs"></div>
+  </div>
+
+  <div id="content"></div>
+  <div class="foot">Powered by <b>Import Lounge</b> · Telegram Mini App</div>
+
+  <div class="backdrop" id="backdrop" onclick="closeSheet()"></div>
+  <div class="sheet" id="sheet">
+    <div class="handle"></div>
+    <div class="sheet-img" id="sheetImg"></div>
+    <div class="sheet-body">
+      <div class="cat" id="sheetCat"></div>
+      <h3 id="sheetName"></h3>
+      <div class="desc" id="sheetDesc"></div>
+      <div class="sheet-price"><span class="lbl" id="sheetLbl">Цена</span><span class="val" id="sheetPrice"></span></div>
+      <div id="orderPanel"></div>
+    </div>
+  </div>
+
+  <div class="cartbar" id="cartBar" onclick="openCart()">
+    <div class="c1">🛒 <span class="badge" id="cartCount">0</span> <span id="cartBarLbl">Заказ</span></div>
+    <div id="cartBarTotal"></div>
+  </div>
+  <div class="backdrop" id="cartBackdrop" onclick="closeCart()"></div>
+  <div class="sheet" id="cartSheet">
+    <div class="handle"></div>
+    <div class="sheet-body">
+      <h3 id="cartTitle" style="margin:4px 0 14px;">Ваш заказ</h3>
+      <div id="cartRows"></div>
+      <div class="cart-total"><span id="cartTotalLbl">Итого</span><span class="v" id="cartTotalVal"></span></div>
+      <button class="addbtn" id="cartSubmit" onclick="submitOrder()">Оформить заказ</button>
+    </div>
+  </div>
+
+<script>
+/* =========== DATA (edit freely) =========== */
+const VENUE="Import Lounge", CURRENCY="so'm";
+const HERO_IMG="https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=900&q=70";
+const I18N={
+  ru:{search:"Поиск...",empty:"Ничего не найдено",price:"Цена",feat:"Рекомендуем",hit:"ХИТ",
+      add:"Добавить в заказ",your:"Ваш заказ",total:"Итого",checkout:"Оформить заказ",qty:"Количество",order:"Заказ",sent:"Заказ отправлен!",scan:"Отсканируйте QR-код на вашем столе",
+      promoT:"Копите кешбэк и получайте бонусы",promoS:"Регистрируйтесь в боте — скидки до 20% и подарок на день рождения"},
+  uz:{search:"Qidiruv...",empty:"Hech narsa topilmadi",price:"Narxi",feat:"Tavsiya etamiz",hit:"HIT",
+      add:"Buyurtmaga qo‘shish",your:"Buyurtmangiz",total:"Jami",checkout:"Buyurtma berish",qty:"Soni",order:"Buyurtma",sent:"Buyurtma yuborildi!",scan:"Stolingizdagi QR-kodni skanerlang",
+      promoT:"Keshbek yig‘ing va bonuslar oling",promoS:"Botda ro‘yxatdan o‘ting — 20% gacha chegirma va tug‘ilgan kun sovg‘asi"},
+};
+const MENU=[
+ {ru:"Кальян",uz:"Kalyan",emoji:"💨",grad:"linear-gradient(135deg,#3a2f6b,#1c1a33)",items:[
+   {ru:"Классический",uz:"Klassik",dru:"Любой вкус на выбор, на воде. Классическая подача от нашего кальянщика.",duz:"Istalgan ta'm, suvda. Kalyanchidan klassik taqdimot.",price:80000,img:"https://images.unsplash.com/photo-1527224538127-2104bb71c51b?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Премиум микс",uz:"Premium miks",dru:"Авторский микс табаков от мастера, насыщенный вкус.",duz:"Ustadan mualliflik tamaki miksi, boy ta'm.",price:120000,feat:true,img:"https://images.unsplash.com/photo-1543361786-c6d0c0d3e0f1?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Фруктовая чаша",uz:"Mevali kosa",dru:"На свежем грейпфруте или апельсине — мягко и ароматно.",duz:"Yangi greypfrut yoki apelsinda — yumshoq va xushbo‘y.",price:150000,feat:true,img:"https://images.unsplash.com/photo-1571950006418-f226dc106482?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Кальян на молоке",uz:"Sutli kalyan",dru:"Мягкий вкус и густой дым на молочной основе.",duz:"Sut asosida yumshoq ta'm va quyuq tutun.",price:110000,img:"https://images.unsplash.com/photo-1614963326505-843f23a0d5b4?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Смена чаши",uz:"Kosani almashtirish",dru:"Добор свежего табака к текущему кальяну.",duz:"Joriy kalyanga yangi tamaki qo‘shish.",price:50000,img:""},
+ ]},
+ {ru:"Напитки",uz:"Ichimliklar",emoji:"🍹",grad:"linear-gradient(135deg,#6b4a1f,#33240f)",items:[
+   {ru:"Домашний лимонад",uz:"Uy limonadi",dru:"Мохито / маракуйя / клубника. Графин 1 литр.",duz:"Moxito / marakuya / qulupnay. 1 litr grafin.",price:35000,img:"https://images.unsplash.com/photo-1437418747212-8d9709afab22?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Чайник чая",uz:"Choynak choy",dru:"Чёрный, зелёный или фруктовый — большой чайник.",duz:"Qora, ko‘k yoki mevali — katta choynak.",price:25000,img:"https://images.unsplash.com/photo-1597481499750-3e6b22637e12?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Эспрессо",uz:"Espresso",dru:"Двойной эспрессо из свежеобжаренных зёрен.",duz:"Yangi qovurilgan donlardan ikki porsiya espresso.",price:18000,img:"https://images.unsplash.com/photo-1510707577719-ae7c14805e3a?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Капучино",uz:"Kapuchino",dru:"Нежная молочная пенка и латте-арт.",duz:"Nozik sut ko‘pigi va latte-art.",price:25000,img:"https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Свежевыжатый сок",uz:"Fresh sharbat",dru:"Апельсин, яблоко или морковь.",duz:"Apelsin, olma yoki sabzi.",price:35000,img:"https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Энергетик",uz:"Energetik",dru:"Red Bull, охлаждённый.",duz:"Red Bull, sovutilgan.",price:28000,img:""},
+ ]},
+ {ru:"Кухня",uz:"Oshxona",emoji:"🍽",grad:"linear-gradient(135deg,#6b2f2f,#331515)",items:[
+   {ru:"Картофель фри",uz:"Fri kartoshka",dru:"Хрустящий, с соусом на выбор.",duz:"Xarsillama, sous bilan.",price:30000,img:"https://images.unsplash.com/photo-1576107232684-1279f390859f?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Куриные крылья BBQ",uz:"Tovuq qanotlari BBQ",dru:"8 штук, острые или классические.",duz:"8 dona, achchiq yoki klassik.",price:55000,img:"https://images.unsplash.com/photo-1608039755401-742074f0548d?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Салат Цезарь",uz:"Sezar salat",dru:"С курицей, пармезаном и фирменным соусом.",duz:"Tovuq, parmezan va maxsus sous bilan.",price:60000,img:"https://images.unsplash.com/photo-1550304943-4f24f54ddde9?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Бургер «Lounge»",uz:"«Lounge» burger",dru:"Сочная говядина, картофель фри в подаче.",duz:"Sersuv mol go‘shti, fri bilan.",price:65000,feat:true,img:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Сырная тарелка",uz:"Pishloq tarelkasi",dru:"5 видов сыра, мёд и орехи.",duz:"5 xil pishloq, asal va yong‘oq.",price:90000,img:"https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Фруктовая тарелка",uz:"Mevali tarelka",dru:"Ассорти сезонных фруктов.",duz:"Mavsumiy mevalar assortisi.",price:75000,img:"https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=600&q=70"},
+ ]},
+ {ru:"Алкоголь",uz:"Alkogol",emoji:"🍸",grad:"linear-gradient(135deg,#2f4a6b,#152333)",items:[
+   {ru:"Авторский коктейль",uz:"Mualliflik kokteyl",dru:"Фирменный коктейль от нашего бармена.",duz:"Barmenimizdan maxsus kokteyl.",price:60000,feat:true,img:"https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Пиво разливное 0.5",uz:"Quyma pivo 0.5",dru:"Свежее разливное пиво.",duz:"Yangi quyma pivo.",price:35000,img:"https://images.unsplash.com/photo-1608270586620-248524c67de9?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Бокал вина",uz:"Vino qadahi",dru:"Красное или белое, 150 мл.",duz:"Qizil yoki oq, 150 ml.",price:45000,img:"https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Виски 50 мл",uz:"Viski 50 ml",dru:"Выдержанный купаж.",duz:"Yetilgan kupaj.",price:70000,img:"https://images.unsplash.com/photo-1569529465841-dfecdab7503b?auto=format&fit=crop&w=600&q=70"},
+   {ru:"Графин дом. вина",uz:"Uy vinosi grafini",dru:"500 мл домашнего вина.",duz:"500 ml uy vinosi.",price:120000,img:""},
+ ]},
+];
+
+/* =========== STATE / HELPERS =========== */
+let LANG="ru", activeCat=0, suppressScroll=false;
+const tg = window.Telegram && window.Telegram.WebApp;
+function haptic(t){ try{ tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(t||"light"); }catch(e){} }
+function money(n){ return n.toLocaleString("ru-RU").replace(/,/g," ")+" "+CURRENCY; }
+function L(it){ return it[LANG]; }
+function D(it){ return it["d"+(LANG==="ru"?"ru":"uz")]||""; }
+
+/* =========== ORDER MODE =========== */
+const _params=new URLSearchParams(location.search);
+let TABLE=_params.get("table")||"";
+const ORDER_MODE=true;  /* ordering available everywhere; table resolved at checkout */
+const HOPTS={
+  strength:{label:{ru:"Крепость",uz:"Kuchlilik"},multi:false,opts:[["light",{ru:"Лёгкий 🌿",uz:"Yengil 🌿"}],["medium",{ru:"Средний ⚖️",uz:"O‘rta ⚖️"}],["strong",{ru:"Крепкий 🔥",uz:"Kuchli 🔥"}]]},
+  base:{label:{ru:"Основа",uz:"Asos"},multi:false,opts:[["water",{ru:"Вода 💧",uz:"Suv 💧"}],["milk",{ru:"Молоко 🥛",uz:"Sut 🥛"}],["ice",{ru:"Лёд 🧊",uz:"Muz 🧊"}],["juice",{ru:"Сок 🧃",uz:"Sharbat 🧃"}]]},
+  extras:{label:{ru:"Добавки",uz:"Qo‘shimchalar"},multi:true,opts:[["fruit",{ru:"Фрукты 🍓",uz:"Mevalar 🍓"}],["mint",{ru:"Мята 🌱",uz:"Yalpiz 🌱"}],["lemon",{ru:"Лимон 🍋",uz:"Limon 🍋"}],["berry",{ru:"Ягоды 🫐",uz:"Rezavorlar 🫐"}]]},
+};
+let cart=[], curItem=null, curCat=null, curOpts={}, curQty=1;
+function isHookah(cat){ return cat && cat.emoji==="💨"; }
+function optLabel(o){ return o[LANG]||o.ru; }
+function findOpt(group,k){ const f=HOPTS[group].opts.find(o=>o[0]===k); return f?optLabel(f[1]):k; }
+
+function buildOrderPanel(it,cat){
+  const p=document.getElementById("orderPanel"); p.innerHTML="";
+  if(!ORDER_MODE) return;
+  curItem=it; curCat=cat; curQty=1; curOpts={};
+  if(isHookah(cat)){
+    curOpts={strength:"medium",base:"water",extras:[]};
+    for(const g of ["strength","base","extras"]){
+      const cfg=HOPTS[g];
+      const grp=document.createElement("div"); grp.className="opt-group";
+      const tt=document.createElement("div"); tt.className="t"; tt.textContent=cfg.label[LANG]; grp.appendChild(tt);
+      const chips=document.createElement("div"); chips.className="chips";
+      cfg.opts.forEach(([k,lbl])=>{
+        const ch=document.createElement("button"); ch.type="button"; ch.className="chip-opt"; ch.textContent=optLabel(lbl);
+        if(cfg.multi?curOpts.extras.includes(k):curOpts[g]===k) ch.classList.add("on");
+        ch.onclick=()=>{ haptic();
+          if(cfg.multi){ const i=curOpts.extras.indexOf(k); i>=0?curOpts.extras.splice(i,1):curOpts.extras.push(k); }
+          else curOpts[g]=k;
+          chips.querySelectorAll(".chip-opt").forEach((c,idx)=>{ const kk=cfg.opts[idx][0];
+            c.classList.toggle("on", cfg.multi?curOpts.extras.includes(kk):curOpts[g]===kk); });
+        };
+        chips.appendChild(ch);
+      });
+      grp.appendChild(chips); p.appendChild(grp);
+    }
+  }
+  const q=document.createElement("div"); q.className="qty";
+  const lbl=document.createElement("span"); lbl.className="lbl"; lbl.textContent=I18N[LANG].qty;
+  const minus=document.createElement("button"); minus.textContent="−";
+  const n=document.createElement("span"); n.className="n"; n.textContent=curQty;
+  const plus=document.createElement("button"); plus.textContent="+";
+  minus.onclick=()=>{ if(curQty>1){curQty--;n.textContent=curQty;haptic();} };
+  plus.onclick=()=>{ curQty++;n.textContent=curQty;haptic(); };
+  q.append(lbl,minus,n,plus); p.appendChild(q);
+  const add=document.createElement("button"); add.className="addbtn"; add.textContent=I18N[LANG].add;
+  add.onclick=addToCart; p.appendChild(add);
+}
+function optsSummary(opts){
+  if(!opts) return "";
+  const parts=[];
+  if(opts.strength) parts.push(findOpt("strength",opts.strength));
+  if(opts.base) parts.push(findOpt("base",opts.base));
+  if(opts.extras&&opts.extras.length) parts.push(opts.extras.map(k=>findOpt("extras",k)).join(", "));
+  return parts.join(" · ");
+}
+function addToCart(){
+  haptic("medium");
+  cart.push({name:L(curItem),name_ru:curItem.ru,price:curItem.price,qty:curQty,
+    opts:isHookah(curCat)?{strength:curOpts.strength,base:curOpts.base,extras:[...curOpts.extras]}:null});
+  closeSheet(); updateCartBar();
+}
+function updateCartBar(){
+  const count=cart.reduce((s,i)=>s+i.qty,0);
+  const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
+  document.getElementById("cartCount").textContent=count;
+  document.getElementById("cartBarTotal").textContent=money(total);
+  document.getElementById("cartBar").classList.toggle("show", ORDER_MODE && count>0);
+}
+function openCart(){
+  haptic();
+  const rows=document.getElementById("cartRows"); rows.innerHTML="";
+  cart.forEach((it,idx)=>{
+    const r=document.createElement("div"); r.className="cart-row";
+    const summ=optsSummary(it.opts);
+    r.innerHTML=`<div class="nm">${it.name} ×${it.qty}${summ?`<small>${summ}</small>`:""}</div>`+
+      `<div class="pr">${money(it.price*it.qty)}</div><div class="rm">✕</div>`;
+    r.querySelector(".rm").onclick=()=>{ cart.splice(idx,1); updateCartBar(); cart.length?openCart():closeCart(); };
+    rows.appendChild(r);
+  });
+  document.getElementById("cartTotalVal").textContent=money(cart.reduce((s,i)=>s+i.price*i.qty,0));
+  document.getElementById("cartBackdrop").classList.add("show");
+  document.getElementById("cartSheet").classList.add("show");
+  if(tg&&tg.BackButton){ tg.BackButton.show(); tg.BackButton.onClick(closeCart); }
+}
+function closeCart(){
+  document.getElementById("cartBackdrop").classList.remove("show");
+  document.getElementById("cartSheet").classList.remove("show");
+  if(tg&&tg.BackButton){ tg.BackButton.hide(); }
+}
+function doSend(){
+  haptic("medium");
+  const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const payload={type:"order",table:TABLE,total,
+    items:cart.map(i=>({name:i.name_ru,qty:i.qty,price:i.price,opts:i.opts}))};
+  if(tg&&tg.sendData){ tg.sendData(JSON.stringify(payload)); tg.close(); }
+  else alert(I18N[LANG].sent+"\n\n"+JSON.stringify(payload,null,2));
+}
+function submitOrder(){
+  if(!cart.length) return;
+  if(TABLE){ doSend(); return; }                 // came from a table QR -> table known
+  if(tg && tg.showScanQrPopup){                   // ordering from the bot -> scan table QR now
+    haptic(); tg.showScanQrPopup({text:I18N[LANG].scan});
+  } else { doSend(); }                            // scanner unavailable -> send without table
+}
+function setTableChip(){
+  if(!TABLE) return;
+  let c=document.getElementById("tableChip");
+  if(!c){ c=document.createElement("span"); c.className="chip gold"; c.id="tableChip";
+    document.querySelector(".hero-meta").appendChild(c); }
+  c.textContent="🪑 "+(LANG==="uz"?"Stol ":"Стол ")+TABLE;
+}
+
+function setLang(l){
+  LANG=l; haptic();
+  document.getElementById("lng-ru").classList.toggle("on",l==="ru");
+  document.getElementById("lng-uz").classList.toggle("on",l==="uz");
+  document.documentElement.lang=l;
+  document.getElementById("q").placeholder=I18N[l].search;
+  document.getElementById("promo-t").textContent=I18N[l].promoT;
+  document.getElementById("promo-s").textContent=I18N[l].promoS;
+  document.getElementById("sheetLbl").textContent=I18N[l].price;
+  document.getElementById("cartBarLbl").textContent=I18N[l].order;
+  document.getElementById("cartTitle").textContent=I18N[l].your;
+  document.getElementById("cartTotalLbl").textContent=I18N[l].total;
+  document.getElementById("cartSubmit").textContent=I18N[l].checkout;
+  buildTabs(); render();
+}
+
+/* =========== TABS =========== */
+function buildTabs(){
+  const t=document.getElementById("tabs"); t.innerHTML="";
+  MENU.forEach((c,i)=>{
+    const b=document.createElement("button");
+    b.className="tab"+(i===activeCat?" on":""); b.id="tab-"+i;
+    b.textContent=c.emoji+" "+c[LANG];
+    b.onclick=()=>{ haptic(); activeCat=i; clearSearch(true); markTab();
+      const el=document.getElementById("sec-"+i);
+      if(el){ suppressScroll=true; el.scrollIntoView({behavior:"smooth",block:"start"});
+        setTimeout(()=>suppressScroll=false,650);} };
+    t.appendChild(b);
+  });
+}
+function markTab(){
+  document.querySelectorAll(".tab").forEach((el,i)=>el.classList.toggle("on",i===activeCat));
+  const at=document.getElementById("tab-"+activeCat);
+  at && at.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"});
+}
+
+/* =========== CARDS / SHEET =========== */
+function thumbEl(it,cat,big){
+  const wrap=document.createElement("div"); wrap.className=big?"":"thumb";
+  wrap.style.background=cat.grad;
+  const emo=document.createElement("div"); emo.textContent=cat.emoji;
+  if(big){ emo.className="sheet-emoji"; }
+  wrap.appendChild(emo);
+  if(it.img){
+    if(!big){ const sk=document.createElement("div"); sk.className="skel"; wrap.appendChild(sk);
+      const img=new Image(); img.src=it.img;
+      img.onload=()=>{ const i=document.createElement("img"); i.src=it.img; wrap.appendChild(i);
+        requestAnimationFrame(()=>i.classList.add("loaded")); sk.remove(); emo.style.display="none"; };
+      img.onerror=()=>sk.remove();
+    } else {
+      const i=new Image(); i.src=it.img; i.onload=()=>{ wrap.appendChild(i); emo.style.display="none"; };
+    }
+  }
+  return wrap;
+}
+function buildFeatured(){
+  const wrap=document.createElement("div"); wrap.className="feat-wrap";
+  const head=document.createElement("div"); head.className="feat-head";
+  head.innerHTML=`★ ${I18N[LANG].feat}`;
+  const rail=document.createElement("div"); rail.className="feat-rail";
+  MENU.forEach(cat=>cat.items.forEach(it=>{ if(!it.feat) return;
+    const c=document.createElement("div"); c.className="feat-card";
+    const im=document.createElement("div"); im.className="feat-img"; im.style.background=cat.grad;
+    const badge=document.createElement("div"); badge.className="feat-badge"; badge.textContent="★ "+I18N[LANG].hit; im.appendChild(badge);
+    const emo=document.createElement("div"); emo.textContent=cat.emoji; im.appendChild(emo);
+    if(it.img){ const i=new Image(); i.src=it.img; i.onload=()=>{ const x=document.createElement("img");
+      x.src=it.img; im.appendChild(x); requestAnimationFrame(()=>x.classList.add("loaded")); emo.style.display="none"; }; }
+    const meta=document.createElement("div"); meta.className="feat-meta";
+    meta.innerHTML=`<div class="nm">${L(it)}</div><div class="pr">${money(it.price)}</div>`;
+    c.appendChild(im); c.appendChild(meta); c.onclick=()=>openSheet(it,cat); rail.appendChild(c);
+  }));
+  wrap.appendChild(head); wrap.appendChild(rail); return wrap;
+}
+function itemCard(it,cat){
+  const div=document.createElement("div"); div.className="card";
+  div.appendChild(thumbEl(it,cat,false));
+  const info=document.createElement("div"); info.className="info";
+  const ds=D(it);
+  info.innerHTML=`<div class="nm">${L(it)}</div>`+(ds?`<div class="ds">${ds}</div>`:"")+
+    `<div class="row"><span class="pr">${money(it.price)}</span><span class="go">➜</span></div>`;
+  div.appendChild(info);
+  div.onclick=()=>openSheet(it,cat);
+  return div;
+}
+function openSheet(it,cat){
+  haptic("medium");
+  const si=document.getElementById("sheetImg"); si.innerHTML=""; si.style.background=cat.grad;
+  const emo=document.createElement("div"); emo.className="sheet-emoji"; emo.textContent=cat.emoji; si.appendChild(emo);
+  if(it.img){ const i=new Image(); i.src=it.img; i.onload=()=>{ si.appendChild(i); emo.style.display="none"; }; }
+  document.getElementById("sheetCat").textContent=cat[LANG];
+  document.getElementById("sheetName").textContent=L(it);
+  document.getElementById("sheetDesc").textContent=D(it)||"—";
+  document.getElementById("sheetPrice").textContent=money(it.price);
+  buildOrderPanel(it,cat);
+  document.getElementById("backdrop").classList.add("show");
+  document.getElementById("sheet").classList.add("show");
+  if(tg && tg.BackButton){ tg.BackButton.show(); tg.BackButton.onClick(closeSheet); }
+}
+function closeSheet(){
+  document.getElementById("backdrop").classList.remove("show");
+  document.getElementById("sheet").classList.remove("show");
+  if(tg && tg.BackButton){ tg.BackButton.hide(); }
+}
+
+/* =========== RENDER =========== */
+function clearSearch(silent){ const q=document.getElementById("q"); q.value=""; document.getElementById("clr").style.display="none"; if(!silent) render(); }
+const io=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting) e.target.classList.add("in"); }),{threshold:.12});
+const secIo=new IntersectionObserver((es)=>{ if(suppressScroll) return;
+  es.forEach(e=>{ if(e.isIntersecting){ const i=+e.target.id.split("-")[1]; if(i!==activeCat){activeCat=i;markTab();} } });
+},{rootMargin:"-45% 0px -50% 0px"});
+
+function render(){
+  const qv=document.getElementById("q").value.trim().toLowerCase();
+  document.getElementById("clr").style.display=qv?"block":"none";
+  const c=document.getElementById("content"); c.innerHTML="";
+  if(qv){
+    const res=[]; MENU.forEach(cat=>cat.items.forEach(it=>{
+      const hay=(it.ru+" "+it.uz+" "+(it.dru||"")+" "+(it.duz||"")).toLowerCase();
+      if(hay.includes(qv)) res.push([it,cat]); }));
+    const s=document.createElement("div"); s.className="section";
+    if(!res.length) s.innerHTML=`<div class="empty">${I18N[LANG].empty} 😕</div>`;
+    else res.forEach(([it,cat])=>{ const card=itemCard(it,cat); s.appendChild(card); requestAnimationFrame(()=>card.classList.add("in")); });
+    c.appendChild(s); return;
+  }
+  c.appendChild(buildFeatured());
+  MENU.forEach((cat,i)=>{
+    const s=document.createElement("div"); s.className="section"; s.id="sec-"+i;
+    const h=document.createElement("h2"); h.innerHTML=`${cat.emoji} ${cat[LANG]} <span class="bar"></span>`; s.appendChild(h);
+    cat.items.forEach(it=>{ const card=itemCard(it,cat); s.appendChild(card); io.observe(card); });
+    c.appendChild(s); secIo.observe(s);
+  });
+}
+
+/* =========== TELEGRAM + BOOT =========== */
+try{ if(tg){ tg.ready(); tg.expand();
+  tg.setHeaderColor&&tg.setHeaderColor("#0b0c10"); tg.setBackgroundColor&&tg.setBackgroundColor("#0b0c10");
+  if(tg.initDataUnsafe&&tg.initDataUnsafe.user&&tg.initDataUnsafe.user.language_code==="uz"){ LANG="uz"; }
+} }catch(e){}
+
+document.getElementById("venue").textContent=VENUE;
+(function(){ const i=new Image(); i.src=HERO_IMG;
+  i.onload=()=>{ const bg=document.getElementById("heroBg"); bg.style.backgroundImage=`url("${HERO_IMG}")`;
+    const im=document.createElement("img"); im.src=HERO_IMG; bg.appendChild(im); requestAnimationFrame(()=>im.classList.add("loaded")); }; })();
+if(tg && tg.onEvent){
+  tg.onEvent("qrTextReceived", (e)=>{
+    const txt=(e&&e.data)||""; const m=txt.match(/table_(\d+)/);
+    if(m){ TABLE=m[1]; if(tg.closeScanQrPopup) tg.closeScanQrPopup(); setTableChip(); doSend(); }
+  });
+}
+setTableChip();
+setLang(LANG);
+updateCartBar();
+</script>
+</body>
+</html>

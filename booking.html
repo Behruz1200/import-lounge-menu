@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Import Lounge — Бронь стола</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0b0c10;--bg2:#101218;--card:#161922;--line:#252a36;--txt:#f4f5f8;
+    --muted:#8b91a0;--gold:#e9c873;--gold2:#caa44d;--green:#3ec97a;--occ:#3a3f4b;--red:#e2685f;
+    --safe-t:env(safe-area-inset-top,0px);}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;}
+  body{padding-bottom:150px;overflow-x:hidden;}
+
+  .top{display:flex;justify-content:space-between;align-items:center;padding:calc(16px + var(--safe-t)) 18px 8px;}
+  .top h1{font-size:20px;font-weight:800;margin:0;}
+  .top p{margin:2px 0 0;font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;font-weight:600;}
+  .lang{display:flex;gap:3px;background:#11131a;border:1px solid var(--line);border-radius:22px;padding:3px;}
+  .lang button{border:0;background:transparent;color:var(--muted);font-family:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:18px;cursor:pointer;}
+  .lang button.on{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#191307;}
+
+  .slot{display:flex;gap:10px;padding:6px 16px 8px;}
+  .slot .f{flex:1;min-width:0;}
+  .slot label{display:block;font-size:11px;color:var(--muted);margin:0 0 4px 4px;}
+  .slot input,.slot select{width:100%;box-sizing:border-box;height:46px;background:var(--card);
+    border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:0 12px;font-size:14.5px;
+    font-family:inherit;outline:none;}
+  .slot input[type=date]{min-width:0;}
+
+  .legend{display:flex;gap:14px;justify-content:center;padding:2px 16px 8px;font-size:12px;color:var(--muted);}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:12px;height:12px;border-radius:4px;display:inline-block;}
+  .dot.free{background:transparent;border:2px solid var(--green);}
+  .dot.sel{background:var(--gold);}
+  .dot.occ{background:var(--occ);}
+
+  .room{position:relative;margin:2px 16px 0;background:
+      repeating-linear-gradient(0deg,#11131a 0 1px,transparent 1px 26px),
+      repeating-linear-gradient(90deg,#11131a 0 1px,transparent 1px 26px),var(--bg2);
+    border:1px solid var(--line);border-radius:18px;padding:14px;}
+  .bar{background:linear-gradient(135deg,#222634,#171a22);border:1px solid var(--line);
+    border-radius:12px;padding:10px;text-align:center;color:var(--gold);font-weight:700;
+    font-size:12px;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .entrance{margin-top:14px;border-top:1px dashed var(--line);padding-top:8px;
+    font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);text-align:center;}
+
+  .table{position:relative;background:var(--card);border:1.5px solid var(--green);border-radius:16px;
+    padding:12px 8px;cursor:pointer;transition:.18s;display:flex;flex-direction:column;align-items:center;gap:7px;}
+  .table:active{transform:scale(.97);}
+  .table.sel{border-color:var(--gold);background:linear-gradient(135deg,#2a2414,#171a22);box-shadow:0 6px 20px rgba(233,200,115,.25);}
+  .table.occ{border-color:var(--occ);opacity:.55;cursor:not-allowed;}
+  .chairs{display:flex;gap:6px;}
+  .chair{width:18px;height:8px;border-radius:4px;background:#39404e;}
+  .table.sel .chair{background:var(--gold2);}
+  .surface{width:74%;height:30px;border-radius:9px;background:#0e1016;border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;}
+  .table.sel .surface{background:#1c1810;border-color:var(--gold2);color:var(--gold);}
+  .cap{font-size:12px;color:var(--muted);font-weight:600;}
+  .badge{position:absolute;top:8px;right:8px;font-size:10px;font-weight:700;color:var(--green);}
+  .table.sel .badge{color:var(--gold);}
+  .table.occ .badge{color:var(--red);}
+
+  .panel{position:fixed;left:0;right:0;bottom:0;background:var(--bg2);border-top:1px solid var(--line);
+    border-radius:22px 22px 0 0;padding:14px 18px calc(18px + var(--safe-t));z-index:40;
+    transform:translateY(115%);transition:transform .3s cubic-bezier(.22,1,.36,1);}
+  .panel.show{transform:none;}
+  .panel h3{margin:2px 0 12px;font-size:17px;font-weight:800;}
+  .panel h3 b{color:var(--gold);}
+  .field{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .field label{flex:0 0 96px;font-size:13px;color:var(--muted);}
+  .field select{flex:1;background:var(--card);border:1px solid var(--line);color:var(--txt);
+    border-radius:12px;padding:11px 12px;font-size:15px;font-family:inherit;outline:none;}
+  .confirm{width:100%;margin-top:6px;border:0;border-radius:14px;padding:15px;font-size:16px;font-weight:800;
+    font-family:inherit;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#191307;cursor:pointer;}
+  .confirm:active{transform:scale(.99);}
+  .hint{text-align:center;color:var(--muted);font-size:12px;padding:12px 16px 4px;}
+
+  .toast{position:fixed;left:50%;top:14px;transform:translateX(-50%) translateY(-120%);
+    background:#2a1414;border:1px solid var(--red);color:#ffd9d4;font-size:13px;font-weight:600;
+    padding:11px 16px;border-radius:14px;z-index:80;transition:transform .3s;max-width:88%;text-align:center;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+  <div class="top">
+    <div><h1 id="venue">Import Lounge</h1><p id="sub">Бронь стола</p></div>
+    <div class="lang">
+      <button id="lng-ru" class="on" onclick="setLang('ru')">RU</button>
+      <button id="lng-uz" onclick="setLang('uz')">UZ</button>
+    </div>
+  </div>
+
+  <div class="slot">
+    <div class="f"><label id="l-date">Дата</label><select id="f-date" onchange="onDateChange()"></select></div>
+    <div class="f"><label id="l-time">Время</label><select id="f-time" onchange="onSlotChange()"></select></div>
+  </div>
+
+  <div class="legend">
+    <span><i class="dot free"></i><span id="lg-free">Свободно</span></span>
+    <span><i class="dot sel"></i><span id="lg-sel">Выбрано</span></span>
+    <span><i class="dot occ"></i><span id="lg-occ">Занято</span></span>
+  </div>
+
+  <div class="room">
+    <div class="bar" id="z-bar">БАР · СЦЕНА</div>
+    <div class="grid" id="grid"></div>
+    <div class="entrance" id="z-ent">— ВХОД —</div>
+  </div>
+
+  <div class="hint" id="hint">Выберите время, затем свободный стол</div>
+
+  <div class="panel" id="panel">
+    <h3 id="p-title">Стол</h3>
+    <div class="field"><label id="l-guests">Гостей</label><select id="f-guests"></select></div>
+    <button class="confirm" id="btn-confirm" onclick="submitBooking()">Забронировать</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+/* Firebase Realtime Database base URL (filled in after setup). Empty = no live check. */
+const FB="https://import-lounge-default-rtdb.firebaseio.com";
+const VENUE="Import Lounge";
+const TABLES=[{id:1,cap:2},{id:2,cap:2},{id:3,cap:4},{id:4,cap:4}];
+const I18N={
+  ru:{sub:"Бронь стола",free:"Свободно",sel:"Выбрано",occ:"Занято",bar:"БАР · СЦЕНА",ent:"— ВХОД —",
+      hint:"Выберите время, затем свободный стол",table:"Стол",ppl:"чел",date:"Дата",time:"Время",
+      guests:"Гостей",confirm:"Забронировать",pickHint:"Стол {n} · до {c} чел",
+      taken:"Этот стол уже занят на это время",done:"Бронь отправлена! Ждите подтверждения."},
+  uz:{sub:"Stol bandlash",free:"Bo‘sh",sel:"Tanlandi",occ:"Band",bar:"BAR · SAHNA",ent:"— KIRISH —",
+      hint:"Vaqtni tanlang, so‘ng bo‘sh stolni",table:"Stol",ppl:"kishi",date:"Sana",time:"Vaqt",
+      guests:"Mehmonlar",confirm:"Band qilish",pickHint:"Stol {n} · {c} kishigacha",
+      taken:"Bu stol bu vaqtga band",done:"So‘rov yuborildi! Tasdiqlashni kuting."},
+};
+let LANG="ru", selected=null, occupied={};
+const tg=window.Telegram&&window.Telegram.WebApp;
+function hap(t){ try{ tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred(t||"light"); }catch(e){} }
+const $=id=>document.getElementById(id);
+function val(id){ return $(id).value; }
+
+function toast(msg){
+  const t=$("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2600);
+  try{ tg&&tg.HapticFeedback&&tg.HapticFeedback.notificationOccurred("error"); }catch(e){}
+}
+
+function setLang(l){
+  LANG=l; hap(); const T=I18N[l];
+  $("lng-ru").classList.toggle("on",l==="ru"); $("lng-uz").classList.toggle("on",l==="uz");
+  $("sub").textContent=T.sub; $("lg-free").textContent=T.free; $("lg-sel").textContent=T.sel;
+  $("lg-occ").textContent=T.occ; $("z-bar").textContent=T.bar; $("z-ent").textContent=T.ent;
+  $("hint").textContent=T.hint; $("l-date").textContent=T.date; $("l-time").textContent=T.time;
+  $("l-guests").textContent=T.guests; $("btn-confirm").textContent=T.confirm;
+  buildDates();
+  renderGrid(); if(selected) openPanel(selected);
+}
+
+function localDateStr(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+const MONTHS={ru:["янв","фев","мар","апр","мая","июн","июл","авг","сен","окт","ноя","дек"],
+              uz:["yan","fev","mar","apr","may","iyn","iyl","avg","sen","okt","noy","dek"]};
+const WD={ru:["Вс","Пн","Вт","Ср","Чт","Пт","Сб"],uz:["Yak","Dush","Sesh","Chor","Pay","Jum","Shan"]};
+function buildDates(){
+  const sel=$("f-date"), prev=sel.value, base=new Date();
+  sel.innerHTML="";
+  for(let i=0;i<14;i++){
+    const d=new Date(base); d.setDate(base.getDate()+i);
+    let lbl = i===0 ? (LANG==="uz"?"Bugun":"Сегодня")
+            : i===1 ? (LANG==="uz"?"Ertaga":"Завтра")
+            : WD[LANG][d.getDay()];
+    lbl += " · " + d.getDate() + " " + MONTHS[LANG][d.getMonth()];
+    const o=document.createElement("option"); o.value=localDateStr(d); o.textContent=lbl; sel.appendChild(o);
+  }
+  if(prev) sel.value=prev;
+}
+function localToday(){ return localDateStr(new Date()); }
+
+function fillTimes(date){
+  const sel=$("f-time"); sel.innerHTML="";
+  const now=new Date(), today=localToday();
+  const [Y,Mo,D]=date.split("-").map(Number);
+  let first=null, soonest=null, soonestDelta=Infinity;
+  for(let h=12;h<=25;h++){ for(const m of [0,30]){
+    const v=`${(h%24).toString().padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+    const slot=new Date(Y,Mo-1,D,h%24,m);
+    const delta=slot.getTime()-now.getTime();
+    if(date===today && delta<=5*60000) continue; // skip passed slots
+    const o=document.createElement("option"); o.value=v; o.textContent=v; sel.appendChild(o);
+    if(!first) first=v;
+    if(delta>0 && delta<soonestDelta){ soonestDelta=delta; soonest=v; } // nearest upcoming
+  }}
+  return soonest || first;   // default to the next available slot
+}
+function buildTimes(){
+  let date=$("f-date").value||localToday();
+  let first=fillTimes(date);
+  if(!first && date===localToday()){          // nothing left today -> jump to tomorrow
+    const t=new Date(); t.setDate(t.getDate()+1); date=localDateStr(t);
+    $("f-date").value=date; first=fillTimes(date);
+  }
+  if(first) $("f-time").value=first;
+}
+function onDateChange(){ buildTimes(); loadAvailability(); }
+function chairRow(n){ let h=`<div class="chairs">`; for(let i=0;i<n;i++) h+=`<span class="chair"></span>`; return h+`</div>`; }
+
+function renderGrid(){
+  const g=$("grid"); g.innerHTML="";
+  TABLES.forEach(t=>{
+    const isOcc=!!occupied[t.id];
+    const top=Math.ceil(t.cap/2), bot=t.cap-top;
+    const el=document.createElement("div");
+    el.className="table"+(isOcc?" occ":"")+(selected&&selected.id===t.id?" sel":"");
+    const badge=isOcc?I18N[LANG].occ:`${t.cap} ${I18N[LANG].ppl}`;
+    el.innerHTML=`<div class="badge">${badge}</div>`+chairRow(top)+
+      `<div class="surface">${I18N[LANG].table} ${t.id}</div>`+chairRow(bot)+
+      `<div class="cap">${t.cap} ${I18N[LANG].ppl}</div>`;
+    el.onclick=()=>{
+      if(isOcc){ toast(I18N[LANG].taken); return; }
+      hap("medium"); selected=t; renderGrid(); openPanel(t);
+    };
+    g.appendChild(el);
+  });
+}
+
+async function loadAvailability(){
+  occupied={};
+  const date=val("f-date"), time=val("f-time");
+  if(FB && FB.indexOf("http")===0 && date && time){
+    try{
+      const r=await fetch(`${FB.replace(/\/$/,"")}/occupied/${date}/${time}.json`,{cache:"no-store"});
+      const j=await r.json(); occupied=j||{};
+    }catch(e){ occupied={}; }
+  }
+  // if the selected table just became occupied, drop it
+  if(selected && occupied[selected.id]){ selected=null; $("panel").classList.remove("show"); }
+  renderGrid();
+}
+function onSlotChange(){ loadAvailability(); }
+
+function buildGuests(cap){
+  const sel=$("f-guests"); sel.innerHTML="";
+  for(let i=1;i<=cap;i++){ const o=document.createElement("option"); o.value=i; o.textContent=i; sel.appendChild(o); }
+  sel.value=cap;
+}
+function openPanel(t){
+  $("p-title").innerHTML=I18N[LANG].pickHint.replace("{n}",`<b>${t.id}</b>`).replace("{c}",t.cap);
+  buildGuests(t.cap);
+  $("panel").classList.add("show");
+  if(tg&&tg.BackButton){ tg.BackButton.show(); tg.BackButton.onClick(()=>{$("panel").classList.remove("show");tg.BackButton.hide();}); }
+}
+
+async function submitBooking(){
+  if(!selected) return;
+  const date=val("f-date"), time=val("f-time"), guests=val("f-guests");
+  if(!date){ $("f-date").focus(); return; }
+  // final live re-check
+  await loadAvailability();
+  if(occupied[selected.id]){ toast(I18N[LANG].taken); return; }
+  hap("medium");
+  const payload={type:"booking",table:selected.id,cap:selected.cap,date,time,guests:Number(guests)};
+  if(tg && tg.sendData){ tg.sendData(JSON.stringify(payload)); tg.close(); }
+  else { alert(I18N[LANG].done+"\n\n"+JSON.stringify(payload,null,2)); }
+}
+
+try{ if(tg){ tg.ready(); tg.expand(); tg.setHeaderColor&&tg.setHeaderColor("#0b0c10"); tg.setBackgroundColor&&tg.setBackgroundColor("#0b0c10");
+  if(tg.initDataUnsafe&&tg.initDataUnsafe.user&&tg.initDataUnsafe.user.language_code==="uz") LANG="uz"; } }catch(e){}
+$("venue").textContent=VENUE;
+buildDates();
+buildTimes();
+setLang(LANG);
+loadAvailability();
+setInterval(loadAvailability, 20000);
+</script>
+</body>
+</html>
