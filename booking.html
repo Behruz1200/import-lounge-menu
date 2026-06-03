@@ -85,6 +85,13 @@
     background:#2a1414;border:1px solid var(--red);color:#ffd9d4;font-size:13px;font-weight:600;
     padding:11px 16px;border-radius:14px;z-index:80;transition:transform .3s;max-width:88%;text-align:center;}
   .toast.show{transform:translateX(-50%) translateY(0);}
+  .zone-h{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);
+    font-weight:800;margin:16px 4px 8px;display:flex;align-items:center;gap:8px;}
+  .zone-h::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent);}
+  .table.vip{border-color:var(--gold);}
+  .table.vip .surface{color:var(--gold);border-color:var(--gold2);}
+  .table.vip .badge{color:var(--gold);}
+  .table.vip.occ{border-color:var(--occ);}
 </style>
 </head>
 <body>
@@ -109,7 +116,7 @@
 
   <div class="room">
     <div class="bar" id="z-bar">БАР · СЦЕНА</div>
-    <div class="grid" id="grid"></div>
+    <div id="zones"></div>
     <div class="entrance" id="z-ent">— ВХОД —</div>
   </div>
 
@@ -127,16 +134,23 @@
 /* Firebase Realtime Database base URL (filled in after setup). Empty = no live check. */
 const FB="https://import-lounge-default-rtdb.firebaseio.com";
 const VENUE="Import Lounge";
-const TABLES=[{id:1,cap:2},{id:2,cap:2},{id:3,cap:4},{id:4,cap:4}];
+const ZONES=[
+ {label:{ru:"ЗАЛ",uz:"ZAL"},vip:false,tables:[
+   {id:"1",cap:2},{id:"2",cap:2},{id:"3",cap:4},{id:"4",cap:4},{id:"5",cap:4},
+   {id:"6",cap:6},{id:"7",cap:6},{id:"8",cap:8},{id:"9",cap:4},{id:"10",cap:2}]},
+ {label:{ru:"VIP-комнаты",uz:"VIP xonalar"},vip:true,tables:[
+   {id:"VIP1",cap:6},{id:"VIP2",cap:8},{id:"VIP3",cap:10},{id:"VIP4",cap:12},{id:"VIP5",cap:6}]},
+];
+function tname(t,z){ return z.vip ? "VIP "+t.id.replace("VIP","") : I18N[LANG].table+" "+t.id; }
 const I18N={
   ru:{sub:"Бронь стола",free:"Свободно",sel:"Выбрано",occ:"Занято",bar:"БАР · СЦЕНА",ent:"— ВХОД —",
       hint:"Выберите время, затем свободный стол",table:"Стол",ppl:"чел",date:"Дата",time:"Время",
-      guests:"Гостей",confirm:"Забронировать",pickHint:"Стол {n} · до {c} чел",
-      taken:"Этот стол уже занят на это время",done:"Бронь отправлена! Ждите подтверждения."},
+      guests:"Гостей",confirm:"Забронировать",pickHint:"{n} · до {c} чел",
+      taken:"Это место уже занято на это время",done:"Бронь отправлена! Ждите подтверждения."},
   uz:{sub:"Stol bandlash",free:"Bo‘sh",sel:"Tanlandi",occ:"Band",bar:"BAR · SAHNA",ent:"— KIRISH —",
-      hint:"Vaqtni tanlang, so‘ng bo‘sh stolni",table:"Stol",ppl:"kishi",date:"Sana",time:"Vaqt",
-      guests:"Mehmonlar",confirm:"Band qilish",pickHint:"Stol {n} · {c} kishigacha",
-      taken:"Bu stol bu vaqtga band",done:"So‘rov yuborildi! Tasdiqlashni kuting."},
+      hint:"Vaqtni tanlang, so‘ng bo‘sh joyni",table:"Stol",ppl:"kishi",date:"Sana",time:"Vaqt",
+      guests:"Mehmonlar",confirm:"Band qilish",pickHint:"{n} · {c} kishigacha",
+      taken:"Bu joy bu vaqtga band",done:"So‘rov yuborildi! Tasdiqlashni kuting."},
 };
 let LANG="ru", selected=null, occupied={};
 const tg=window.Telegram&&window.Telegram.WebApp;
@@ -209,21 +223,26 @@ function onDateChange(){ buildTimes(); loadAvailability(); }
 function chairRow(n){ let h=`<div class="chairs">`; for(let i=0;i<n;i++) h+=`<span class="chair"></span>`; return h+`</div>`; }
 
 function renderGrid(){
-  const g=$("grid"); g.innerHTML="";
-  TABLES.forEach(t=>{
-    const isOcc=!!occupied[t.id];
-    const top=Math.ceil(t.cap/2), bot=t.cap-top;
-    const el=document.createElement("div");
-    el.className="table"+(isOcc?" occ":"")+(selected&&selected.id===t.id?" sel":"");
-    const badge=isOcc?I18N[LANG].occ:`${t.cap} ${I18N[LANG].ppl}`;
-    el.innerHTML=`<div class="badge">${badge}</div>`+chairRow(top)+
-      `<div class="surface">${I18N[LANG].table} ${t.id}</div>`+chairRow(bot)+
-      `<div class="cap">${t.cap} ${I18N[LANG].ppl}</div>`;
-    el.onclick=()=>{
-      if(isOcc){ toast(I18N[LANG].taken); return; }
-      hap("medium"); selected=t; renderGrid(); openPanel(t);
-    };
-    g.appendChild(el);
+  const root=$("zones"); root.innerHTML="";
+  ZONES.forEach(z=>{
+    const h=document.createElement("div"); h.className="zone-h"; h.textContent=z.label[LANG]; root.appendChild(h);
+    const g=document.createElement("div"); g.className="grid"; root.appendChild(g);
+    z.tables.forEach(t=>{
+      const isOcc=!!occupied[t.id];
+      const top=Math.min(Math.ceil(t.cap/2),3), bot=Math.min(Math.floor(t.cap/2),3);
+      const el=document.createElement("div");
+      el.className="table"+(z.vip?" vip":"")+(isOcc?" occ":"")+(selected&&selected.id===t.id?" sel":"");
+      const badge=isOcc?I18N[LANG].occ:`${t.cap} ${I18N[LANG].ppl}`;
+      el.innerHTML=`<div class="badge">${badge}</div>`+chairRow(top)+
+        `<div class="surface">${tname(t,z)}</div>`+chairRow(bot)+
+        `<div class="cap">${t.cap} ${I18N[LANG].ppl}</div>`;
+      el.onclick=()=>{
+        if(isOcc){ toast(I18N[LANG].taken); return; }
+        hap("medium"); selected={id:t.id,cap:t.cap,name:tname(t,z),vip:z.vip};
+        renderGrid(); openPanel(selected);
+      };
+      g.appendChild(el);
+    });
   });
 }
 
@@ -248,7 +267,7 @@ function buildGuests(cap){
   sel.value=cap;
 }
 function openPanel(t){
-  $("p-title").innerHTML=I18N[LANG].pickHint.replace("{n}",`<b>${t.id}</b>`).replace("{c}",t.cap);
+  $("p-title").innerHTML=I18N[LANG].pickHint.replace("{n}",`<b>${t.name||t.id}</b>`).replace("{c}",t.cap);
   buildGuests(t.cap);
   $("panel").classList.add("show");
   if(tg&&tg.BackButton){ tg.BackButton.show(); tg.BackButton.onClick(()=>{$("panel").classList.remove("show");tg.BackButton.hide();}); }
