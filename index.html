@@ -99,27 +99,29 @@
   .feat-meta .nm{font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .feat-meta .pr{margin-top:6px;font-size:14.5px;font-weight:800;color:var(--gold);}
 
-  .section{padding:4px 14px 2px;}
-  .section h2{font-size:19px;font-weight:800;margin:20px 4px 12px;display:flex;align-items:center;gap:9px;}
+  .section{padding:4px 12px 2px;}
+  .section h2{font-size:19px;font-weight:800;margin:18px 4px 12px;display:flex;align-items:center;gap:9px;}
   .section h2 .bar{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent);}
-  .card{display:flex;gap:13px;background:var(--card);border:1px solid var(--line);
-    border-radius:18px;padding:11px;margin-bottom:11px;align-items:stretch;cursor:pointer;
+  /* Compact 2-column tile grid — many items visible at once */
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .card{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);
+    border-radius:16px;overflow:hidden;cursor:pointer;
     transition:transform .15s ease, border-color .2s;opacity:0;transform:translateY(14px);}
   .card.in{opacity:1;transform:none;}
   .card:active{transform:scale(.98);}
-  .thumb{position:relative;width:96px;height:96px;flex:0 0 96px;border-radius:13px;overflow:hidden;
-    display:flex;align-items:center;justify-content:center;font-size:36px;}
+  .thumb{position:relative;width:100%;height:110px;border-radius:0;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;font-size:40px;}
   .thumb .skel{position:absolute;inset:0;background:linear-gradient(100deg,#1c2029 30%,#272c38 50%,#1c2029 70%);
     background-size:200% 100%;animation:sh 1.2s infinite;}
   @keyframes sh{from{background-position:200% 0;}to{background-position:-200% 0;}}
   .thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s;}
   .thumb img.loaded{opacity:1;}
-  .info{flex:1;display:flex;flex-direction:column;justify-content:center;min-width:0;}
-  .info .nm{font-size:16px;font-weight:700;line-height:1.2;}
-  .info .ds{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.35;
+  .info{flex:1;display:flex;flex-direction:column;padding:9px 11px 11px;min-width:0;}
+  .info .nm{font-size:13.5px;font-weight:700;line-height:1.25;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-  .info .row{margin-top:8px;display:flex;align-items:center;justify-content:space-between;}
-  .info .pr{font-size:15.5px;font-weight:800;color:var(--gold);}
+  .info .ds{display:none;}
+  .info .row{margin-top:auto;padding-top:8px;display:flex;align-items:center;justify-content:space-between;}
+  .info .pr{font-size:14px;font-weight:800;color:var(--gold);}
   .info .go{color:var(--muted);font-size:13px;}
   .empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:15px;}
 
@@ -535,17 +537,19 @@ function render(){
       const hay=(it.ru+" "+it.uz+" "+(it.dru||"")+" "+(it.duz||"")).toLowerCase();
       if(hay.includes(qv)) res.push([it,cat]); }));
     const s=document.createElement("div"); s.className="section";
-    if(!res.length) s.innerHTML=`<div class="empty">${I18N[LANG].empty} 😕</div>`;
-    else res.forEach(([it,cat])=>{ const card=itemCard(it,cat); s.appendChild(card); requestAnimationFrame(()=>card.classList.add("in")); });
-    c.appendChild(s); return;
+    if(!res.length){ s.innerHTML=`<div class="empty">${I18N[LANG].empty} 😕</div>`; c.appendChild(s); return; }
+    const g=document.createElement("div"); g.className="grid";
+    res.forEach(([it,cat])=>{ const card=itemCard(it,cat); g.appendChild(card); requestAnimationFrame(()=>card.classList.add("in")); });
+    s.appendChild(g); c.appendChild(s); return;
   }
   /* Show only the active category — short, no long scroll. */
   if(activeCat===0 && MENU.some(cat=>cat.items.some(it=>it.feat))) c.appendChild(buildFeatured());
   const cat=MENU[activeCat]; if(!cat) return;
   const s=document.createElement("div"); s.className="section"; s.id="sec-"+activeCat;
   const h=document.createElement("h2"); h.innerHTML=`${cat.emoji} ${cat[LANG]} <span class="bar"></span>`; s.appendChild(h);
-  cat.items.forEach(it=>{ const card=itemCard(it,cat); s.appendChild(card); io.observe(card); });
-  c.appendChild(s);
+  const g=document.createElement("div"); g.className="grid";
+  cat.items.forEach(it=>{ const card=itemCard(it,cat); g.appendChild(card); io.observe(card); });
+  s.appendChild(g); c.appendChild(s);
 }
 
 /* =========== TELEGRAM + BOOT =========== */
