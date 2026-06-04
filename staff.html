@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Import Lounge — Стафф</title>
+<style>
+  :root{--bg:#0b0c10;--card:#14161e;--line:#232733;--txt:#f2f3f7;--muted:#8b90a0;
+    --gold:#ef4444;--gold2:#c01225;--ok:#1fb877;}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--txt);padding:0 0 30px;}
+  header{position:sticky;top:0;z-index:10;background:rgba(11,12,16,.92);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);padding:14px 16px 0;}
+  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .top h1{font-size:19px;font-weight:800;}.top h1 .r{color:var(--gold);}
+  .top .clock{color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums;}
+  .tabs{display:flex;gap:8px;}
+  .tab{flex:1;text-align:center;padding:12px;border-radius:12px 12px 0 0;background:transparent;border:0;
+    color:var(--muted);font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;}
+  .tab.on{color:var(--txt);border-bottom:3px solid var(--gold);}
+  .tab .b{display:inline-block;min-width:20px;padding:1px 7px;border-radius:20px;background:var(--gold);
+    color:#fff;font-size:12px;margin-left:5px;}
+  main{padding:16px;}
+  .ordcard{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gold);
+    border-radius:14px;padding:14px 16px;margin-bottom:12px;animation:in .25s ease;}
+  @keyframes in{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+  .ordcard .h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+  .ordcard .t{font-size:19px;font-weight:800;}
+  .ordcard .ago{font-size:13px;color:var(--muted);}
+  .ordcard .it{font-size:15px;padding:5px 0;border-top:1px dashed var(--line);}
+  .ordcard .it:first-of-type{border-top:0;}
+  .ordcard .it .hk{color:var(--gold);font-weight:700;}
+  .ordcard .it small{display:block;color:var(--muted);font-size:13px;margin-top:2px;}
+  .ordcard .tot{margin-top:8px;font-weight:800;color:var(--gold);}
+  .ordcard .ok{width:100%;margin-top:12px;padding:13px;border:0;border-radius:12px;
+    background:linear-gradient(135deg,var(--ok),#159e63);color:#fff;font-size:16px;font-weight:800;font-family:inherit;cursor:pointer;}
+  .ordcard .ok:active{transform:scale(.98);}
+  .empty{text-align:center;color:var(--muted);padding:70px 20px;font-size:16px;}
+  /* hookah control */
+  .hkrow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:12px 14px;margin-bottom:10px;}
+  .hkrow.active{border-color:var(--ok);}
+  .hkrow .nm{flex:1;font-size:17px;font-weight:700;}
+  .hkrow .nm small{display:block;color:var(--muted);font-weight:500;font-size:13px;margin-top:2px;}
+  .btn{border:0;border-radius:11px;padding:11px 14px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;color:#fff;}
+  .btn.start{background:linear-gradient(135deg,var(--gold),var(--gold2));}
+  .btn.coal{background:#2a2f3a;}
+  .btn.stop{background:#3a2a2a;color:#ff9b9b;}
+  .btn:active{transform:scale(.96);}
+  .sheet{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.6);display:none;align-items:flex-end;}
+  .sheet.show{display:flex;}
+  .sheet .box{background:var(--bg);width:100%;border-radius:20px 20px 0 0;padding:20px 18px 30px;border:1px solid var(--line);}
+  .sheet h3{font-size:18px;margin-bottom:14px;}
+  .sheet .opt{display:block;width:100%;text-align:left;padding:15px;border-radius:12px;border:1px solid var(--line);
+    background:var(--card);color:var(--txt);font-size:16px;font-weight:700;font-family:inherit;margin-bottom:10px;cursor:pointer;}
+</style>
+</head>
+<body>
+  <header>
+    <div class="top"><h1>Import <span class="r">Lounge</span> · Стафф</h1><span class="clock" id="clock"></span></div>
+    <div class="tabs">
+      <button class="tab on" id="tab-ord" onclick="showTab('ord')">🆕 Заказы <span class="b" id="ordBadge">0</span></button>
+      <button class="tab" id="tab-hk" onclick="showTab('hk')">💨 Кальяны</button>
+    </div>
+  </header>
+  <main>
+    <div id="view-ord"></div>
+    <div id="view-hk" style="display:none;"></div>
+  </main>
+
+  <div class="sheet" id="sheet" onclick="if(event.target===this)closeSheet()">
+    <div class="box">
+      <h3 id="sheetTitle">Крепость кальяна</h3>
+      <button class="opt" onclick="startHookah('light')">🌿 Лёгкий — угли каждые 20 мин</button>
+      <button class="opt" onclick="startHookah('medium')">⚖️ Средний — угли каждые 15 мин</button>
+      <button class="opt" onclick="startHookah('strong')">🔥 Крепкий — угли каждые 10 мин</button>
+    </div>
+  </div>
+
+<script>
+const FB="https://import-lounge-default-rtdb.firebaseio.com";
+const base=FB.replace(/\/$/,"");
+const STR={light:"Лёгкий 🌿",medium:"Средний ⚖️",strong:"Крепкий 🔥"};
+let orders={}, sessions={}, tables=[], seen=new Set(), firstLoad=true, pickTable=null;
+
+function money(n){ return (n||0).toLocaleString("ru-RU").replace(/,/g," ")+" so'm"; }
+function ago(ts){ const s=Math.floor((Date.now()-ts)/1000); if(s<60)return s+" сек";
+  const m=Math.floor(s/60); if(m<60)return m+" мин"; return Math.floor(m/60)+" ч "+(m%60)+" мин"; }
+let actx;
+function beep(){ try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const o=actx.createOscillator(),g=actx.createGain(); o.type="sine"; o.frequency.value=920;
+  o.connect(g); g.connect(actx.destination); g.gain.setValueAtTime(.2,actx.currentTime);
+  o.start(); o.stop(actx.currentTime+.4);}catch(e){} }
+
+function showTab(t){
+  document.getElementById("tab-ord").classList.toggle("on",t==="ord");
+  document.getElementById("tab-hk").classList.toggle("on",t==="hk");
+  document.getElementById("view-ord").style.display=t==="ord"?"block":"none";
+  document.getElementById("view-hk").style.display=t==="hk"?"block":"none";
+  if(t==="hk") renderHk();
+}
+
+/* ---------- ORDERS ---------- */
+async function loadOrders(){
+  try{ const r=await fetch(base+"/orders.json",{cache:"no-store"}); orders=(await r.json())||{}; }catch(e){}
+  renderOrders();
+}
+function renderOrders(){
+  const v=document.getElementById("view-ord");
+  const ids=Object.keys(orders).filter(id=>orders[id] && orders[id].status!=="done");
+  ids.sort((a,b)=>(orders[b].ts||0)-(orders[a].ts||0));
+  document.getElementById("ordBadge").textContent=ids.length;
+  // sound when a new order appears
+  let fresh=false;
+  ids.forEach(id=>{ if(!seen.has(id)){ seen.add(id); if(!firstLoad) fresh=true; } });
+  if(fresh) beep();
+  firstLoad=false;
+  if(!ids.length){ v.innerHTML='<div class="empty">Новых заказов нет ✅</div>'; return; }
+  v.innerHTML="";
+  ids.forEach(id=>{
+    const o=orders[id];
+    const items=(o.items||[]).map(it=>`<div class="it">${it.h?'<span class="hk">💨 </span>':''}${it.n} ×${it.q}`+
+      (it.o?`<small>🔧 ${it.o}</small>`:"")+`</div>`).join("");
+    const c=document.createElement("div"); c.className="ordcard";
+    c.innerHTML=`<div class="h"><span class="t">🪑 ${o.name||o.table}</span><span class="ago">${ago(o.ts||Date.now())} назад</span></div>
+      ${items}<div class="tot">Итого: ${money(o.total)}</div>
+      <button class="ok">✅ Принял</button>`;
+    c.querySelector(".ok").onclick=()=>acceptOrder(id);
+    v.appendChild(c);
+  });
+}
+async function acceptOrder(id){
+  try{ await fetch(base+"/orders/"+id+".json",{method:"DELETE"}); }catch(e){}
+  delete orders[id]; renderOrders();
+}
+
+/* ---------- HOOKAH TIMERS ---------- */
+async function loadSessions(){
+  try{ const r=await fetch(base+"/hookah.json",{cache:"no-store"}); sessions=(await r.json())||{}; }catch(e){}
+}
+function renderHk(){
+  const v=document.getElementById("view-hk"); v.innerHTML="";
+  if(!tables.length){ v.innerHTML='<div class="empty">Загрузка столов…</div>'; return; }
+  tables.forEach(t=>{
+    const s=sessions[t.id];
+    const row=document.createElement("div"); row.className="hkrow"+(s?" active":"");
+    const info=document.createElement("div"); info.className="nm";
+    info.innerHTML=t.name+(s?`<small>${STR[s.str]||""} · идёт ${ago(s.start)}</small>`:"<small>свободно</small>");
+    row.appendChild(info);
+    if(s){
+      const coal=document.createElement("button"); coal.className="btn coal"; coal.textContent="🔥 Угли";
+      coal.onclick=()=>resetCoal(t.id);
+      const stop=document.createElement("button"); stop.className="btn stop"; stop.textContent="Стоп";
+      stop.onclick=()=>stopHookah(t.id);
+      row.append(coal,stop);
+    } else {
+      const st=document.createElement("button"); st.className="btn start"; st.textContent="Старт";
+      st.onclick=()=>openPick(t);
+      row.appendChild(st);
+    }
+    v.appendChild(row);
+  });
+}
+function openPick(t){ pickTable=t; document.getElementById("sheetTitle").textContent="Крепость · "+t.name;
+  document.getElementById("sheet").classList.add("show"); }
+function closeSheet(){ document.getElementById("sheet").classList.remove("show"); }
+async function startHookah(str){
+  if(!pickTable) return; const now=Date.now();
+  sessions[pickTable.id]={str,name:pickTable.name,start:now,coal:now};
+  try{ await fetch(base+"/hookah/"+pickTable.id+".json",{method:"PUT",
+    body:JSON.stringify(sessions[pickTable.id])}); }catch(e){}
+  closeSheet(); renderHk();
+}
+async function resetCoal(id){ const now=Date.now(); if(sessions[id]) sessions[id].coal=now;
+  try{ await fetch(base+"/hookah/"+id+"/coal.json",{method:"PUT",body:JSON.stringify(now)}); }catch(e){}
+  renderHk(); }
+async function stopHookah(id){ delete sessions[id];
+  try{ await fetch(base+"/hookah/"+id+".json",{method:"DELETE"}); }catch(e){}
+  renderHk(); }
+
+/* ---------- BOOT ---------- */
+function tickClock(){ const d=new Date(); document.getElementById("clock").textContent=
+  String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
+fetch("tables.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
+  if(Array.isArray(d)) d.forEach(z=>(z.tables||[]).forEach(t=>tables.push(t)));
+}).catch(()=>{});
+loadOrders(); loadSessions();
+setInterval(loadOrders,4000);
+setInterval(()=>{ loadSessions().then(()=>{ if(document.getElementById("view-hk").style.display!=="none") renderHk(); }); },5000);
+setInterval(tickClock,1000); tickClock();
+</script>
+</body>
+</html>
