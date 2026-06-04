@@ -123,9 +123,14 @@
   .info .nm{font-size:13.5px;font-weight:700;line-height:1.25;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
   .info .ds{display:none;}
-  .info .row{margin-top:auto;padding-top:8px;display:flex;align-items:center;justify-content:space-between;}
+  .info .row{margin-top:auto;padding-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
   .info .pr{font-size:14px;font-weight:800;color:var(--gold);}
-  .info .go{color:var(--muted);font-size:13px;}
+  .add-mini{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:0;
+    background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;font-size:19px;line-height:1;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(239,68,68,.35);
+    transition:transform .12s;}
+  .add-mini:active{transform:scale(.86);}
+  .add-mini.added{background:#1fb877;box-shadow:0 3px 10px rgba(31,184,119,.4);}
   .empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:15px;}
 
   .foot{text-align:center;color:var(--muted);font-size:12px;padding:28px 16px 8px;}
@@ -450,7 +455,8 @@ function setLang(l){
 function buildTabs(){
   const sel=document.getElementById("catSelect"); sel.innerHTML="";
   MENU.forEach((c,i)=>{
-    const o=document.createElement("option"); o.value=i; o.textContent=c.emoji+"  "+c[LANG];
+    const o=document.createElement("option"); o.value=i;
+    o.textContent=c.emoji+"  "+c[LANG]+"  ("+c.items.length+")";
     sel.appendChild(o);
   });
   markTab();
@@ -503,12 +509,25 @@ function itemCard(it,cat){
   const div=document.createElement("div"); div.className="card";
   div.appendChild(thumbEl(it,cat,false));
   const info=document.createElement("div"); info.className="info";
-  const ds=D(it);
-  info.innerHTML=`<div class="nm">${L(it)}</div>`+(ds?`<div class="ds">${ds}</div>`:"")+
-    `<div class="row"><span class="pr">${money(it.price)}</span><span class="go">➜</span></div>`;
+  const nm=document.createElement("div"); nm.className="nm"; nm.textContent=L(it); info.appendChild(nm);
+  const row=document.createElement("div"); row.className="row";
+  const pr=document.createElement("span"); pr.className="pr"; pr.textContent=money(it.price);
+  const add=document.createElement("button"); add.className="add-mini"; add.type="button";
+  add.textContent="+"; add.setAttribute("aria-label","Add");
+  add.onclick=(e)=>quickAdd(it,cat,e);
+  row.append(pr,add); info.appendChild(row);
   div.appendChild(info);
   div.onclick=()=>openSheet(it,cat);
   return div;
+}
+function quickAdd(it,cat,e){
+  if(e) e.stopPropagation();
+  if(isHookah(cat)){ openSheet(it,cat); return; }   /* hookah needs options */
+  haptic("medium");
+  cart.push({name:L(it),name_ru:it.ru,price:it.price,qty:1,pid:it.pid||null,opts:null});
+  updateCartBar();
+  const b=e&&e.currentTarget;
+  if(b){ b.classList.add("added"); b.textContent="✓"; setTimeout(()=>{ b.classList.remove("added"); b.textContent="+"; },500); }
 }
 function openSheet(it,cat){
   haptic("medium");
