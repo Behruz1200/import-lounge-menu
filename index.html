@@ -70,7 +70,9 @@
     font-family:inherit;outline:none;}
   .search .si{color:var(--muted);font-size:16px;}
   .search .clr{color:var(--muted);font-size:18px;cursor:pointer;display:none;}
-  .catbar{position:relative;display:flex;align-items:center;margin:2px 14px 11px;
+  .cat-label{margin:2px 18px 5px;font-size:11px;font-weight:800;letter-spacing:1px;
+    text-transform:uppercase;color:var(--gold);}
+  .catbar{position:relative;display:flex;align-items:center;margin:0 14px 11px;
     background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 12px;
     box-shadow:0 4px 14px rgba(239,68,68,.12);}
   .catbar .cs-ico{font-size:17px;flex:0 0 auto;}
@@ -215,6 +217,7 @@
       <input id="q" oninput="render()" placeholder="Поиск..." />
       <span class="clr" id="clr" onclick="clearSearch()">✕</span>
     </div>
+    <div class="cat-label" id="catLabel">Категория</div>
     <div class="catbar">
       <span class="cs-ico" id="csIco">💨</span>
       <select id="catSelect" onchange="onCat(this.value)"></select>
@@ -260,10 +263,10 @@ const HERO_IMG="https://images.unsplash.com/photo-1514933651103-005eec06c04b?aut
 const I18N={
   ru:{search:"Поиск...",empty:"Ничего не найдено",price:"Цена",feat:"Рекомендуем",hit:"ХИТ",
       add:"Добавить в заказ",your:"Ваш заказ",total:"Итого",checkout:"Оформить заказ",qty:"Количество",order:"Заказ",sent:"Заказ отправлен!",scan:"Отсканируйте QR-код на вашем столе",
-      promoT:"Копите кешбэк и получайте бонусы",promoS:"Регистрируйтесь в боте — скидки до 20% и подарок на день рождения"},
+      promoT:"Копите кешбэк и получайте бонусы",promoS:"Регистрируйтесь в боте — скидки до 20% и подарок на день рождения",cat:"Категория"},
   uz:{search:"Qidiruv...",empty:"Hech narsa topilmadi",price:"Narxi",feat:"Tavsiya etamiz",hit:"HIT",
       add:"Buyurtmaga qo‘shish",your:"Buyurtmangiz",total:"Jami",checkout:"Buyurtma berish",qty:"Soni",order:"Buyurtma",sent:"Buyurtma yuborildi!",scan:"Stolingizdagi QR-kodni skanerlang",
-      promoT:"Keshbek yig‘ing va bonuslar oling",promoS:"Botda ro‘yxatdan o‘ting — 20% gacha chegirma va tug‘ilgan kun sovg‘asi"},
+      promoT:"Keshbek yig‘ing va bonuslar oling",promoS:"Botda ro‘yxatdan o‘ting — 20% gacha chegirma va tug‘ilgan kun sovg‘asi",cat:"Kategoriya"},
 };
 let MENU=[
  {ru:"Кальян",uz:"Kalyan",emoji:"💨",grad:"linear-gradient(135deg,#3a2f6b,#1c1a33)",items:[
@@ -427,6 +430,7 @@ function setLang(l){
   document.getElementById("lng-uz").classList.toggle("on",l==="uz");
   document.documentElement.lang=l;
   document.getElementById("q").placeholder=I18N[l].search;
+  document.getElementById("catLabel").textContent=I18N[l].cat;
   document.getElementById("promo-t").textContent=I18N[l].promoT;
   document.getElementById("promo-s").textContent=I18N[l].promoS;
   document.getElementById("sheetLbl").textContent=I18N[l].price;
