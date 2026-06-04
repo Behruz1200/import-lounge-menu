@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Import Lounge — Вызов</title>
+<style>
+  :root{--bg:#0b0c10;--card:#14161e;--line:#232733;--txt:#f2f3f7;--muted:#8b90a0;
+    --gold:#ef4444;--gold2:#c01225;--ok:#1fb877;--blue:#3aa0ff;}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;padding:28px 22px;text-align:center;}
+  .ic{font-size:60px;margin-bottom:14px;}
+  h1{font-size:21px;font-weight:800;margin-bottom:8px;}
+  h1 .r{color:var(--gold);}
+  p{color:var(--muted);font-size:15px;line-height:1.4;max-width:320px;margin:0 auto 22px;}
+  .table{font-size:22px;font-weight:800;margin:6px 0 22px;}
+  .table b{color:var(--gold);}
+  .btn{display:block;width:100%;max-width:360px;margin:10px auto 0;padding:17px;border:0;border-radius:15px;
+    font-size:17px;font-weight:800;font-family:inherit;color:#fff;cursor:pointer;transition:transform .12s;}
+  .btn:active{transform:scale(.97);}
+  .btn.waiter{background:linear-gradient(135deg,#f5a623,#e0890a);}
+  .btn.bill{background:linear-gradient(135deg,var(--blue),#1f73c8);}
+  .btn.scan{background:linear-gradient(135deg,var(--gold),var(--gold2));}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:700;font-size:14px;padding:12px;}
+  .hide{display:none;}
+</style>
+</head>
+<body>
+  <div id="scanView">
+    <div class="ic">📷</div>
+    <h1>Import <span class="r">Lounge</span></h1>
+    <p id="scanMsg">Отсканируйте QR‑код на вашем столе, чтобы вызвать официанта или попросить счёт.</p>
+    <button class="btn scan" onclick="startScan()">📷 Сканировать стол</button>
+  </div>
+
+  <div id="actView" class="hide">
+    <div class="ic">🪑</div>
+    <div class="table">Стол: <b id="tname">—</b></div>
+    <button class="btn waiter" onclick="send('waiter')">🔔 Позвать официанта</button>
+    <button class="btn bill" onclick="send('bill')">🧾 Попросить счёт</button>
+    <button class="btn ghost" onclick="startScan()">📷 Другой стол</button>
+  </div>
+
+<script>
+const tg = window.Telegram && window.Telegram.WebApp;
+let TABLE="";
+try{ if(tg){ tg.ready(); tg.expand();
+  tg.setHeaderColor&&tg.setHeaderColor("#0b0c10"); tg.setBackgroundColor&&tg.setBackgroundColor("#0b0c10"); } }catch(e){}
+
+function show(view){
+  document.getElementById("scanView").classList.toggle("hide", view!=="scan");
+  document.getElementById("actView").classList.toggle("hide", view!=="act");
+}
+function startScan(){
+  if(tg && tg.showScanQrPopup){
+    tg.showScanQrPopup({text:"Наведите камеру на QR‑код стола"});
+  } else {
+    document.getElementById("scanMsg").textContent="Откройте через Telegram, чтобы отсканировать QR.";
+  }
+}
+function onQr(text){
+  const m=(text||"").match(/table_(\d+)/);
+  if(m){
+    TABLE=m[1];
+    document.getElementById("tname").textContent=TABLE;
+    if(tg && tg.closeScanQrPopup) tg.closeScanQrPopup();
+    show("act");
+  }
+  // not a table QR -> keep the scanner open for another try
+}
+function send(kind){
+  if(!TABLE) return;
+  if(tg && tg.sendData){ tg.sendData(JSON.stringify({type:"call", table:TABLE, kind})); tg.close(); }
+}
+if(tg && tg.onEvent){
+  tg.onEvent("qrTextReceived", (e)=>onQr(e && e.data));
+}
+show("scan");
+// auto-open the camera on launch
+setTimeout(startScan, 350);
+</script>
+</body>
+</html>
