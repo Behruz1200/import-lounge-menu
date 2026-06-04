@@ -359,7 +359,7 @@ function optsSummary(opts){
 }
 function addToCart(){
   haptic("medium");
-  cart.push({name:L(curItem),name_ru:curItem.ru,price:curItem.price,qty:curQty,
+  cart.push({name:L(curItem),name_ru:curItem.ru,price:curItem.price,qty:curQty,pid:curItem.pid||null,
     opts:isHookah(curCat)?{strength:curOpts.strength,base:curOpts.base,extras:[...curOpts.extras]}:null});
   closeSheet(); updateCartBar();
 }
@@ -395,7 +395,7 @@ function doSend(){
   haptic("medium");
   const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
   const payload={type:"order",table:TABLE,total,
-    items:cart.map(i=>({name:i.name_ru,qty:i.qty,price:i.price,opts:i.opts}))};
+    items:cart.map(i=>({name:i.name_ru,qty:i.qty,price:i.price,pid:i.pid,opts:i.opts}))};
   if(tg&&tg.sendData){ tg.sendData(JSON.stringify(payload)); tg.close(); }
   else alert(I18N[LANG].sent+"\n\n"+JSON.stringify(payload,null,2));
 }

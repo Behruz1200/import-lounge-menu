@@ -134,14 +134,14 @@
 /* Firebase Realtime Database base URL (filled in after setup). Empty = no live check. */
 const FB="https://import-lounge-default-rtdb.firebaseio.com";
 const VENUE="Import Lounge";
-const ZONES=[
+let ZONES=[
  {label:{ru:"ЗАЛ",uz:"ZAL"},vip:false,tables:[
    {id:"1",cap:2},{id:"2",cap:2},{id:"3",cap:4},{id:"4",cap:4},{id:"5",cap:4},
    {id:"6",cap:6},{id:"7",cap:6},{id:"8",cap:8},{id:"9",cap:4},{id:"10",cap:2}]},
  {label:{ru:"VIP-комнаты",uz:"VIP xonalar"},vip:true,tables:[
    {id:"VIP1",cap:6},{id:"VIP2",cap:8},{id:"VIP3",cap:10},{id:"VIP4",cap:12},{id:"VIP5",cap:6}]},
 ];
-function tname(t,z){ return z.vip ? "VIP "+t.id.replace("VIP","") : I18N[LANG].table+" "+t.id; }
+function tname(t,z){ return t.name || (z.vip ? "VIP "+t.id.replace("VIP","") : I18N[LANG].table+" "+t.id); }
 const I18N={
   ru:{sub:"Бронь стола",free:"Свободно",sel:"Выбрано",occ:"Занято",bar:"БАР · СЦЕНА",ent:"— ВХОД —",
       hint:"Выберите время, затем свободный стол",table:"Стол",ppl:"чел",date:"Дата",time:"Время",
@@ -294,6 +294,10 @@ buildTimes();
 setLang(LANG);
 loadAvailability();
 setInterval(loadAvailability, 20000);
+/* Load real halls/tables generated from Poster (falls back to embedded layout) */
+fetch("tables.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
+  if(Array.isArray(d)&&d.length){ ZONES=d; selected=null; renderGrid(); loadAvailability(); }
+}).catch(()=>{});
 </script>
 </body>
 </html>
