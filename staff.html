@@ -24,6 +24,8 @@
   .ordcard{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gold);
     border-radius:14px;padding:14px 16px;margin-bottom:12px;animation:in .25s ease;}
   @keyframes in{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+  .ordcard.call{border-left-color:#f5a623;}
+  .ordcard.call.bill{border-left-color:#3aa0ff;}
   .ordcard .h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
   .ordcard .t{font-size:19px;font-weight:800;}
   .ordcard .ago{font-size:13px;color:var(--muted);}
@@ -81,7 +83,7 @@
 const FB="https://import-lounge-default-rtdb.firebaseio.com";
 const base=FB.replace(/\/$/,"");
 const STR={light:"Лёгкий 🌿",medium:"Средний ⚖️",strong:"Крепкий 🔥"};
-let orders={}, sessions={}, pending={}, done={}, seen=new Set(), firstLoad=true, pickTable=null;
+let orders={}, sessions={}, pending={}, done={}, calls={}, seen=new Set(), firstLoad=true, pickTable=null;
 function pendCount(id){ return (((pending[id]||{}).items)||[]).reduce((s,i)=>s+(i.q||1),0); }
 
 function money(n){ return (n||0).toLocaleString("ru-RU").replace(/,/g," ")+" so'm"; }
@@ -104,20 +106,34 @@ function showTab(t){
 /* ---------- ORDERS ---------- */
 async function loadOrders(){
   try{ const r=await fetch(base+"/orders.json",{cache:"no-store"}); orders=(await r.json())||{}; }catch(e){}
+  try{ const r2=await fetch(base+"/calls.json",{cache:"no-store"}); calls=(await r2.json())||{}; }catch(e){}
   renderOrders();
 }
+async function clearCall(id){ try{ await fetch(base+"/calls/"+id+".json",{method:"DELETE"}); }catch(e){}
+  delete calls[id]; renderOrders(); }
 function renderOrders(){
   const v=document.getElementById("view-ord");
-  const ids=Object.keys(orders).filter(id=>orders[id] && orders[id].status!=="done");
-  ids.sort((a,b)=>(orders[b].ts||0)-(orders[a].ts||0));
-  document.getElementById("ordBadge").textContent=ids.length;
-  // sound when a new order appears
+  const cids=Object.keys(calls||{}).sort((a,b)=>(calls[b].ts||0)-(calls[a].ts||0));
+  const ids=Object.keys(orders).filter(id=>orders[id] && orders[id].status!=="done")
+                .sort((a,b)=>(orders[b].ts||0)-(orders[a].ts||0));
+  document.getElementById("ordBadge").textContent=cids.length+ids.length;
+  // sound when a new call or order appears
   let fresh=false;
+  cids.forEach(id=>{ if(!seen.has("c"+id)){ seen.add("c"+id); if(!firstLoad) fresh=true; } });
   ids.forEach(id=>{ if(!seen.has(id)){ seen.add(id); if(!firstLoad) fresh=true; } });
   if(fresh) beep();
   firstLoad=false;
-  if(!ids.length){ v.innerHTML='<div class="empty">Новых заказов нет ✅</div>'; return; }
+  if(!cids.length && !ids.length){ v.innerHTML='<div class="empty">Новых заказов нет ✅</div>'; return; }
   v.innerHTML="";
+  cids.forEach(id=>{
+    const c=calls[id]; const bill=c.type==="bill";
+    const card=document.createElement("div"); card.className="ordcard call"+(bill?" bill":"");
+    card.innerHTML=`<div class="h"><span class="t">${bill?"🧾":"🔔"} ${c.name||c.table} — ${bill?"Счёт":"Официант"}</span>`+
+      `<span class="ago">${ago(c.ts||Date.now())} назад</span></div>`+
+      `<button class="ok">✅ Принял</button>`;
+    card.querySelector(".ok").onclick=()=>clearCall(id);
+    v.appendChild(card);
+  });
   ids.forEach(id=>{
     const o=orders[id];
     const items=(o.items||[]).map(it=>`<div class="it">${it.h?'<span class="hk">💨 </span>':''}${it.n} ×${it.q}`+
