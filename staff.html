@@ -81,7 +81,8 @@
 const FB="https://import-lounge-default-rtdb.firebaseio.com";
 const base=FB.replace(/\/$/,"");
 const STR={light:"Лёгкий 🌿",medium:"Средний ⚖️",strong:"Крепкий 🔥"};
-let orders={}, sessions={}, pending={}, seen=new Set(), firstLoad=true, pickTable=null;
+let orders={}, sessions={}, pending={}, done={}, seen=new Set(), firstLoad=true, pickTable=null;
+function pendCount(id){ return (((pending[id]||{}).items)||[]).reduce((s,i)=>s+(i.q||1),0); }
 
 function money(n){ return (n||0).toLocaleString("ru-RU").replace(/,/g," ")+" so'm"; }
 function ago(ts){ const s=Math.floor((Date.now()-ts)/1000); if(s<60)return s+" сек";
@@ -138,10 +139,17 @@ async function acceptOrder(id){
 async function loadSessions(){
   try{ const r=await fetch(base+"/hookah.json",{cache:"no-store"}); sessions=(await r.json())||{}; }catch(e){}
   try{ const r2=await fetch(base+"/hookah_pending.json",{cache:"no-store"}); pending=(await r2.json())||{}; }catch(e){}
+  try{ const r3=await fetch(base+"/hookah_done.json",{cache:"no-store"}); done=(await r3.json())||{}; }catch(e){}
+  // drop stale "done" markers once the table's check no longer has a hookah
+  Object.keys(done).forEach(id=>{ if(!pending[id]){ delete done[id];
+    fetch(base+"/hookah_done/"+id+".json",{method:"DELETE"}).catch(()=>{}); } });
 }
 function renderHk(){
   const v=document.getElementById("view-hk"); v.innerHTML="";
-  const ids=Array.from(new Set([...Object.keys(pending||{}),...Object.keys(sessions||{})]));
+  // active sessions, plus pending tables that still have an un-served hookah
+  const set=new Set(Object.keys(sessions||{}));
+  Object.keys(pending||{}).forEach(id=>{ if(!sessions[id] && pendCount(id) > (done[id]||0)) set.add(id); });
+  const ids=Array.from(set);
   if(!ids.length){ v.innerHTML='<div class="empty">Нет столов с кальяном 💨<br><small style="font-size:13px">Стол появится, когда кальян добавлен в чек Poster</small></div>'; return; }
   ids.sort((a,b)=>(((sessions[a]||pending[a]||{}).name)||a).localeCompare(((sessions[b]||pending[b]||{}).name)||b));
   ids.forEach(id=>{
@@ -169,17 +177,24 @@ function openPick(t){ pickTable=t; document.getElementById("sheetTitle").textCon
   document.getElementById("sheet").classList.add("show"); }
 function closeSheet(){ document.getElementById("sheet").classList.remove("show"); }
 async function startHookah(str){
-  if(!pickTable) return; const now=Date.now();
-  sessions[pickTable.id]={str,name:pickTable.name,start:now,coal:now};
-  try{ await fetch(base+"/hookah/"+pickTable.id+".json",{method:"PUT",
-    body:JSON.stringify(sessions[pickTable.id])}); }catch(e){}
+  if(!pickTable) return; const now=Date.now(); const id=pickTable.id;
+  sessions[id]={str,name:pickTable.name,start:now,coal:now};
+  try{ await fetch(base+"/hookah/"+id+".json",{method:"PUT",
+    body:JSON.stringify(sessions[id])}); }catch(e){}
+  delete done[id]; fetch(base+"/hookah_done/"+id+".json",{method:"DELETE"}).catch(()=>{});
   closeSheet(); renderHk();
 }
 async function resetCoal(id){ const now=Date.now(); if(sessions[id]) sessions[id].coal=now;
   try{ await fetch(base+"/hookah/"+id+"/coal.json",{method:"PUT",body:JSON.stringify(now)}); }catch(e){}
   renderHk(); }
-async function stopHookah(id){ delete sessions[id];
+async function stopHookah(id){
+  const cur=pendCount(id);
+  delete sessions[id];
   try{ await fetch(base+"/hookah/"+id+".json",{method:"DELETE"}); }catch(e){}
+  // remember how many hookahs were on the check, so this table stays hidden
+  // until a NEW hookah is added (or the check is closed)
+  if(cur>0){ done[id]=cur;
+    fetch(base+"/hookah_done/"+id+".json",{method:"PUT",body:JSON.stringify(cur)}).catch(()=>{}); }
   renderHk(); }
 
 /* ---------- BOOT ---------- */
