@@ -258,7 +258,7 @@ const I18N={
       add:"Buyurtmaga qo‘shish",your:"Buyurtmangiz",total:"Jami",checkout:"Buyurtma berish",qty:"Soni",order:"Buyurtma",sent:"Buyurtma yuborildi!",scan:"Stolingizdagi QR-kodni skanerlang",
       promoT:"Keshbek yig‘ing va bonuslar oling",promoS:"Botda ro‘yxatdan o‘ting — 20% gacha chegirma va tug‘ilgan kun sovg‘asi"},
 };
-const MENU=[
+let MENU=[
  {ru:"Кальян",uz:"Kalyan",emoji:"💨",grad:"linear-gradient(135deg,#3a2f6b,#1c1a33)",items:[
    {ru:"Классический",uz:"Klassik",dru:"Любой вкус на выбор, на воде. Классическая подача от нашего кальянщика.",duz:"Istalgan ta'm, suvda. Kalyanchidan klassik taqdimot.",price:80000,img:""},
    {ru:"Премиум микс",uz:"Premium miks",dru:"Авторский микс табаков от мастера, насыщенный вкус.",duz:"Ustadan mualliflik tamaki miksi, boy ta'm.",price:120000,feat:true,img:""},
@@ -538,7 +538,7 @@ function render(){
     else res.forEach(([it,cat])=>{ const card=itemCard(it,cat); s.appendChild(card); requestAnimationFrame(()=>card.classList.add("in")); });
     c.appendChild(s); return;
   }
-  c.appendChild(buildFeatured());
+  if(MENU.some(cat=>cat.items.some(it=>it.feat))) c.appendChild(buildFeatured());
   MENU.forEach((cat,i)=>{
     const s=document.createElement("div"); s.className="section"; s.id="sec-"+i;
     const h=document.createElement("h2"); h.innerHTML=`${cat.emoji} ${cat[LANG]} <span class="bar"></span>`; s.appendChild(h);
@@ -566,6 +566,10 @@ if(tg && tg.onEvent){
 setTableChip();
 setLang(LANG);
 updateCartBar();
+/* Load the real menu generated from Poster (falls back to embedded menu if missing) */
+fetch("menu.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
+  if(Array.isArray(d)&&d.length){ MENU=d; activeCat=0; buildTabs(); render(); }
+}).catch(()=>{});
 </script>
 </body>
 </html>
