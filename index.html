@@ -206,7 +206,7 @@
       <small id="promo-s">Регистрируйтесь в боте — скидки до 20% и подарок на день рождения</small></div>
   </div>
 
-  <div class="stick">
+  <div class="stick" id="stick">
     <div class="search">
       <span class="si">🔎</span>
       <input id="q" oninput="render()" placeholder="Поиск..." />
@@ -437,10 +437,7 @@ function buildTabs(){
     const b=document.createElement("button");
     b.className="tab"+(i===activeCat?" on":""); b.id="tab-"+i;
     b.textContent=c.emoji+" "+c[LANG];
-    b.onclick=()=>{ haptic(); activeCat=i; clearSearch(true); markTab();
-      const el=document.getElementById("sec-"+i);
-      if(el){ suppressScroll=true; el.scrollIntoView({behavior:"smooth",block:"start"});
-        setTimeout(()=>suppressScroll=false,650);} };
+    b.onclick=()=>{ haptic(); activeCat=i; clearSearch(true); markTab(); render(); scrollToList(); };
     t.appendChild(b);
   });
 }
@@ -521,9 +518,13 @@ function closeSheet(){
 /* =========== RENDER =========== */
 function clearSearch(silent){ const q=document.getElementById("q"); q.value=""; document.getElementById("clr").style.display="none"; if(!silent) render(); }
 const io=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting) e.target.classList.add("in"); }),{threshold:.12});
-const secIo=new IntersectionObserver((es)=>{ if(suppressScroll) return;
-  es.forEach(e=>{ if(e.isIntersecting){ const i=+e.target.id.split("-")[1]; if(i!==activeCat){activeCat=i;markTab();} } });
-},{rootMargin:"-45% 0px -50% 0px"});
+
+function scrollToList(){
+  const st=document.getElementById("stick");
+  if(!st) return;
+  const y=st.getBoundingClientRect().top+window.pageYOffset-2;
+  window.scrollTo({top:y,behavior:"smooth"});
+}
 
 function render(){
   const qv=document.getElementById("q").value.trim().toLowerCase();
@@ -538,13 +539,13 @@ function render(){
     else res.forEach(([it,cat])=>{ const card=itemCard(it,cat); s.appendChild(card); requestAnimationFrame(()=>card.classList.add("in")); });
     c.appendChild(s); return;
   }
-  if(MENU.some(cat=>cat.items.some(it=>it.feat))) c.appendChild(buildFeatured());
-  MENU.forEach((cat,i)=>{
-    const s=document.createElement("div"); s.className="section"; s.id="sec-"+i;
-    const h=document.createElement("h2"); h.innerHTML=`${cat.emoji} ${cat[LANG]} <span class="bar"></span>`; s.appendChild(h);
-    cat.items.forEach(it=>{ const card=itemCard(it,cat); s.appendChild(card); io.observe(card); });
-    c.appendChild(s); secIo.observe(s);
-  });
+  /* Show only the active category — short, no long scroll. */
+  if(activeCat===0 && MENU.some(cat=>cat.items.some(it=>it.feat))) c.appendChild(buildFeatured());
+  const cat=MENU[activeCat]; if(!cat) return;
+  const s=document.createElement("div"); s.className="section"; s.id="sec-"+activeCat;
+  const h=document.createElement("h2"); h.innerHTML=`${cat.emoji} ${cat[LANG]} <span class="bar"></span>`; s.appendChild(h);
+  cat.items.forEach(it=>{ const card=itemCard(it,cat); s.appendChild(card); io.observe(card); });
+  c.appendChild(s);
 }
 
 /* =========== TELEGRAM + BOOT =========== */
