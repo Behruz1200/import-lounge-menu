@@ -81,7 +81,7 @@
 const FB="https://import-lounge-default-rtdb.firebaseio.com";
 const base=FB.replace(/\/$/,"");
 const STR={light:"Лёгкий 🌿",medium:"Средний ⚖️",strong:"Крепкий 🔥"};
-let orders={}, sessions={}, tables=[], seen=new Set(), firstLoad=true, pickTable=null;
+let orders={}, sessions={}, pending={}, seen=new Set(), firstLoad=true, pickTable=null;
 
 function money(n){ return (n||0).toLocaleString("ru-RU").replace(/,/g," ")+" so'm"; }
 function ago(ts){ const s=Math.floor((Date.now()-ts)/1000); if(s<60)return s+" сек";
@@ -137,25 +137,29 @@ async function acceptOrder(id){
 /* ---------- HOOKAH TIMERS ---------- */
 async function loadSessions(){
   try{ const r=await fetch(base+"/hookah.json",{cache:"no-store"}); sessions=(await r.json())||{}; }catch(e){}
+  try{ const r2=await fetch(base+"/hookah_pending.json",{cache:"no-store"}); pending=(await r2.json())||{}; }catch(e){}
 }
 function renderHk(){
   const v=document.getElementById("view-hk"); v.innerHTML="";
-  if(!tables.length){ v.innerHTML='<div class="empty">Загрузка столов…</div>'; return; }
-  tables.forEach(t=>{
-    const s=sessions[t.id];
+  const ids=Array.from(new Set([...Object.keys(pending||{}),...Object.keys(sessions||{})]));
+  if(!ids.length){ v.innerHTML='<div class="empty">Нет столов с кальяном 💨<br><small style="font-size:13px">Стол появится, когда кальян добавлен в чек Poster</small></div>'; return; }
+  ids.sort((a,b)=>(((sessions[a]||pending[a]||{}).name)||a).localeCompare(((sessions[b]||pending[b]||{}).name)||b));
+  ids.forEach(id=>{
+    const s=sessions[id], p=pending[id];
+    const name=(s&&s.name)||(p&&p.name)||("Стол "+id);
     const row=document.createElement("div"); row.className="hkrow"+(s?" active":"");
     const info=document.createElement("div"); info.className="nm";
-    info.innerHTML=t.name+(s?`<small>${STR[s.str]||""} · идёт ${ago(s.start)}</small>`:"<small>свободно</small>");
+    let sub;
+    if(s) sub=`${STR[s.str]||""} · идёт ${ago(s.start)}`;
+    else { const its=((p&&p.items)||[]).map(it=>it.n+(it.q>1?" ×"+it.q:"")).join(", "); sub="🧾 в чеке: "+(its||"кальян"); }
+    info.innerHTML=name+`<small>${sub}</small>`;
     row.appendChild(info);
     if(s){
-      const coal=document.createElement("button"); coal.className="btn coal"; coal.textContent="🔥 Угли";
-      coal.onclick=()=>resetCoal(t.id);
-      const stop=document.createElement("button"); stop.className="btn stop"; stop.textContent="Стоп";
-      stop.onclick=()=>stopHookah(t.id);
+      const coal=document.createElement("button"); coal.className="btn coal"; coal.textContent="🔥 Угли"; coal.onclick=()=>resetCoal(id);
+      const stop=document.createElement("button"); stop.className="btn stop"; stop.textContent="Стоп"; stop.onclick=()=>stopHookah(id);
       row.append(coal,stop);
     } else {
-      const st=document.createElement("button"); st.className="btn start"; st.textContent="Старт";
-      st.onclick=()=>openPick(t);
+      const st=document.createElement("button"); st.className="btn start"; st.textContent="Старт"; st.onclick=()=>openPick({id,name});
       row.appendChild(st);
     }
     v.appendChild(row);
@@ -181,9 +185,6 @@ async function stopHookah(id){ delete sessions[id];
 /* ---------- BOOT ---------- */
 function tickClock(){ const d=new Date(); document.getElementById("clock").textContent=
   String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
-fetch("tables.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
-  if(Array.isArray(d)) d.forEach(z=>(z.tables||[]).forEach(t=>tables.push(t)));
-}).catch(()=>{});
 loadOrders(); loadSessions();
 setInterval(loadOrders,4000);
 setInterval(()=>{ loadSessions().then(()=>{ if(document.getElementById("view-hk").style.display!=="none") renderHk(); }); },5000);
