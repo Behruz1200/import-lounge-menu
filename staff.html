@@ -26,6 +26,7 @@
   @keyframes in{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
   .ordcard.call{border-left-color:#f5a623;}
   .ordcard.call.bill{border-left-color:#3aa0ff;}
+  .ordcard.call.hookah{border-left-color:#8b5cf6;}
   .ordcard .h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
   .ordcard .t{font-size:19px;font-weight:800;}
   .ordcard .ago{font-size:13px;color:var(--muted);}
@@ -136,9 +137,11 @@ function renderOrders(){
   if(!cids.length && !ids.length){ v.innerHTML='<div class="empty">Новых заказов нет ✅</div>'; return; }
   v.innerHTML="";
   cids.forEach(id=>{
-    const c=calls[id]; const bill=c.type==="bill";
-    const card=document.createElement("div"); card.className="ordcard call"+(bill?" bill":"");
-    card.innerHTML=`<div class="h"><span class="t">${bill?"🧾":"🔔"} ${c.name||c.table} — ${bill?"Счёт":"Официант"}</span>`+
+    const c=calls[id];
+    const K={bill:{i:"🧾",l:"Счёт",c:" bill"},hookah:{i:"💨",l:"Кальянщик",c:" hookah"},waiter:{i:"🔔",l:"Официант",c:""}};
+    const k=K[c.type]||K.waiter;
+    const card=document.createElement("div"); card.className="ordcard call"+k.c;
+    card.innerHTML=`<div class="h"><span class="t">${k.i} ${c.name||c.table} — ${k.l}</span>`+
       `<span class="ago">${ago(c.ts||Date.now())} назад</span></div>`+
       `<button class="ok">✅ Принял</button>`;
     card.querySelector(".ok").onclick=()=>clearCall(id);

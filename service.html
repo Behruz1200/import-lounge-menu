@@ -21,6 +21,7 @@
     font-size:17px;font-weight:800;font-family:inherit;color:#fff;cursor:pointer;transition:transform .12s;}
   .btn:active{transform:scale(.97);}
   .btn.waiter{background:linear-gradient(135deg,#f5a623,#e0890a);}
+  .btn.hookah{background:linear-gradient(135deg,#8b5cf6,#6d28d9);}
   .btn.bill{background:linear-gradient(135deg,var(--blue),#1f73c8);}
   .btn.scan{background:linear-gradient(135deg,var(--gold),var(--gold2));}
   .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:700;font-size:14px;padding:12px;}
@@ -31,7 +32,7 @@
   <div id="scanView">
     <div class="ic">📷</div>
     <h1>Import <span class="r">Lounge</span></h1>
-    <p id="scanMsg">Отсканируйте QR‑код на вашем столе, чтобы вызвать официанта или попросить счёт.</p>
+    <p id="scanMsg">Отсканируйте QR‑код на вашем столе, чтобы вызвать официанта, кальянщика или попросить счёт.</p>
     <button class="btn scan" onclick="startScan()">📷 Сканировать стол</button>
   </div>
 
@@ -39,6 +40,7 @@
     <div class="ic">🪑</div>
     <div class="table">Стол: <b id="tname">—</b></div>
     <button class="btn waiter" onclick="send('waiter')">🔔 Позвать официанта</button>
+    <button class="btn hookah" onclick="send('hookah')">💨 Позвать кальянщика</button>
     <button class="btn bill" onclick="send('bill')">🧾 Попросить счёт</button>
     <button class="btn ghost" onclick="startScan()">📷 Другой стол</button>
   </div>
