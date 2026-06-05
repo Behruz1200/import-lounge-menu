@@ -46,6 +46,11 @@
 <script>
 const tg = window.Telegram && window.Telegram.WebApp;
 let TABLE="";
+let TNAMES={};   // table_id -> friendly name (e.g. 33 -> "Запас 1")
+fetch("tables.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
+  if(Array.isArray(d)) d.forEach(z=>(z.tables||[]).forEach(t=>{ TNAMES[String(t.id)]=t.name; }));
+}).catch(()=>{});
+function tableName(id){ return TNAMES[String(id)] || ("Стол "+id); }
 try{ if(tg){ tg.ready(); tg.expand();
   tg.setHeaderColor&&tg.setHeaderColor("#0b0c10"); tg.setBackgroundColor&&tg.setBackgroundColor("#0b0c10"); } }catch(e){}
 
@@ -64,7 +69,7 @@ function onQr(text){
   const m=(text||"").match(/table_(\d+)/);
   if(m){
     TABLE=m[1];
-    document.getElementById("tname").textContent=TABLE;
+    document.getElementById("tname").textContent=tableName(TABLE);
     if(tg && tg.closeScanQrPopup) tg.closeScanQrPopup();
     show("act");
   }
