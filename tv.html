@@ -18,15 +18,16 @@
   header .clock{font-size:24px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;}
   .legend{flex:0 0 auto;display:flex;gap:14px;margin-bottom:12px;color:var(--muted);font-size:13px;flex-wrap:wrap;}
   .legend b{color:var(--txt);}
-  .grid{flex:1;min-height:0;display:grid;gap:12px;}   /* columns/rows set by JS */
-  .tile{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:12px;overflow:hidden;
-    display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-height:0;}
-  .tile .tname{font-size:22px;font-weight:800;line-height:1.1;}
-  .tile .str{display:inline-block;margin-top:5px;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;
+  .grid{flex:1;min-height:0;overflow-y:auto;display:grid;gap:18px;align-content:start;
+    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}
+  .tile{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:20px 22px;
+    display:flex;flex-direction:column;justify-content:center;align-items:flex-start;}
+  .tile .tname{font-size:26px;font-weight:800;line-height:1.1;}
+  .tile .str{display:inline-block;margin-top:6px;font-size:14px;font-weight:700;padding:3px 12px;border-radius:20px;
     background:rgba(255,255,255,.06);color:var(--muted);}
-  .tile .count{font-size:48px;font-weight:800;font-variant-numeric:tabular-nums;margin:6px 0 2px;letter-spacing:1px;line-height:1;}
-  .tile .cap{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
-  .tile .sess{margin-top:8px;font-size:12px;color:var(--muted);}
+  .tile .count{font-size:60px;font-weight:800;font-variant-numeric:tabular-nums;margin:10px 0 4px;letter-spacing:1px;line-height:1;}
+  .tile .cap{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .tile .sess{margin-top:10px;font-size:15px;color:var(--muted);}
   .tile.ok{border-color:#26303f;}
   .tile.soon{border-color:var(--warn);}
   .tile.due{border-color:var(--gold);background:linear-gradient(160deg,#3a1418,#1a0d10);animation:pulse 1s infinite;}
@@ -123,80 +124,26 @@ async function loadAll(){
   renderCoal(); renderOrders(); renderBookings();
 }
 
-let tileEls={};
-function renderCoal(){   // rebuild the grid only when called (from loadAll, every 4s)
+function renderCoal(){
   const now=Date.now(); const grid=document.getElementById("grid");
   const ids=Object.keys(sessions||{}).filter(id=>sessions[id]);
   const empty=document.getElementById("empty");
-  if(!ids.length){ grid.style.display="none"; grid.innerHTML=""; tileEls={}; empty.style.display="flex"; return; }
+  if(!ids.length){ grid.style.display="none"; grid.innerHTML=""; empty.style.display="flex"; return; }
   grid.style.display="grid"; empty.style.display="none";
   ids.sort((a,b)=>((sessions[a].coal+COAL[sessions[a].str||"medium"])-now)-((sessions[b].coal+COAL[sessions[b].str||"medium"])-now));
-  grid.innerHTML=""; tileEls={};
+  grid.innerHTML="";
   ids.forEach(id=>{
-    const s=sessions[id];
-    const t=document.createElement("div"); t.className="tile ok";
+    const s=sessions[id]; const intv=COAL[s.str||"medium"];
+    const remain=(s.coal+intv)-now, sessRemain=(s.start+SESSION)-now;
+    const due=remain<=0; let cls="ok"; if(due)cls="due"; else if(remain<=120000)cls="soon";
+    if(due && !lastDue[id]) beep(880); lastDue[id]=due;
+    const t=document.createElement("div"); t.className="tile "+cls;
     t.innerHTML=`<div class="tname">${s.name||("Стол "+id)}</div>
       <div class="str">${STR_LABEL[s.str||"medium"]||"Средний"}</div>
-      <div class="count">--</div><div class="cap">до смены углей</div>
-      <div class="sess"></div>`;
-    grid.appendChild(t); tileEls[id]=t;
-  });
-  layoutCoal();
-  tickCoal();
-}
-function layoutCoal(){
-  const grid=document.getElementById("grid");
-  const n=Object.keys(tileEls).length; if(!n) return;
-  // Pin the grid to the exact remaining viewport height so it never scrolls.
-  const rect=grid.getBoundingClientRect();
-  const h=Math.max(0, window.innerHeight - rect.top - 16);
-  grid.style.height=h+"px";
-  const gap=12, w=grid.clientWidth;
-  if(w<=0||h<=0) return;
-  // largest tile up to the max card size that still fits everything on screen
-  const maxW=320, maxH=200;
-  let bestW=0, cols=1;
-  for(let c=1;c<=n;c++){
-    const r=Math.ceil(n/c);
-    const wFit=(w-(c-1)*gap)/c;
-    const hFit=(h-(r-1)*gap)/r;
-    const tw=Math.min(wFit, hFit*(maxW/maxH), maxW);
-    if(tw>bestW){ bestW=tw; cols=c; }
-  }
-  const tileW=Math.max(60,bestW), tileH=tileW*(maxH/maxW);
-  grid.style.gridTemplateRows="";
-  grid.style.gridTemplateColumns=`repeat(${cols}, ${tileW}px)`;
-  grid.style.gridAutoRows=`${tileH}px`;
-  grid.style.justifyContent="center";
-  grid.style.alignContent="center";
-  // fonts scale with the (capped) tile size — cap at the nice original sizes
-  const cnt=Math.max(16, Math.min(tileH*0.28, 56));
-  const nm =Math.max(12, Math.min(tileH*0.12, 24));
-  const sm =Math.max(9,  Math.min(tileH*0.065, 13));
-  Object.values(tileEls).forEach(el=>{
-    el.style.padding=Math.max(8,tileH*0.08)+"px "+Math.max(10,tileW*0.06)+"px";
-    el.querySelector(".tname").style.fontSize=nm+"px";
-    el.querySelector(".count").style.fontSize=cnt+"px";
-    el.querySelector(".str").style.fontSize=sm+"px";
-    el.querySelector(".cap").style.fontSize=sm+"px";
-    el.querySelector(".sess").style.fontSize=sm+"px";
-  });
-}
-window.addEventListener("resize", layoutCoal);
-function tickCoal(){     // update countdowns in place (every 1s, lightweight)
-  const now=Date.now();
-  Object.keys(tileEls).forEach(id=>{
-    const s=sessions[id]; if(!s) return;
-    const intv=COAL[s.str||"medium"];
-    const remain=(s.coal+intv)-now, sessRemain=(s.start+SESSION)-now;
-    const due=remain<=0; let cls="tile "+(due?"due":(remain<=120000?"soon":"ok"));
-    if(due && !lastDue[id]) beep(880); lastDue[id]=due;
-    const el=tileEls[id];
-    if(el.className!==cls) el.className=cls;
-    el.querySelector(".count").textContent=due?"УГЛИ":fmt(remain);
-    el.querySelector(".cap").textContent=due?"🔥 поменять угли":"до смены углей";
-    el.querySelector(".sess").innerHTML="Сеанс: "+fmt(Math.max(0,now-s.start))+
-      (sessRemain<=0?' <span class="end">· завершается</span>':(sessRemain<=10*60000?' <span class="end">· скоро конец</span>':''));
+      <div class="count">${due?"УГЛИ":fmt(remain)}</div>
+      <div class="cap">${due?"🔥 поменять угли":"до смены углей"}</div>
+      <div class="sess">Сеанс: ${fmt(Math.max(0,now-s.start))} ${sessRemain<=0?'<span class="end">· завершается</span>':(sessRemain<=10*60000?'<span class="end">· скоро конец</span>':'')}</div>`;
+    grid.appendChild(t);
   });
 }
 
@@ -248,9 +195,8 @@ function tickClock(){ const d=new Date(); document.getElementById("clock").textC
   String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
 
 loadAll();
-setTimeout(layoutCoal,400); setTimeout(layoutCoal,1500);   // re-fit once dimensions settle
 setInterval(tickClock,1000);
-setInterval(tickCoal,1000);     // live coal countdown (in-place, lightweight)
+setInterval(renderCoal,1000);   // rebuild coal board every second (sorted, live countdown)
 setInterval(loadAll,4000);      // refresh data from Firebase + reconcile lists
 tickClock();
 </script>
