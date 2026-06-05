@@ -50,6 +50,10 @@
   .ncard.ord{border-left:4px solid var(--gold);}
   .ncard.bk{border-left:4px solid var(--warn);}
   .ncard.bk.conf{border-left:4px solid var(--ok);}
+  .ncard.call{border-left:4px solid var(--blue);}
+  .ncard.call.bill{border-left:4px solid var(--gold);background:linear-gradient(160deg,#241016,#14161e);}
+  .ncard.call .kind{font-size:14px;color:var(--muted);margin-top:4px;}
+  .panel h2 .b.hot{background:var(--blue);}
   .ncard .top{display:flex;justify-content:space-between;align-items:baseline;}
   .ncard .top .nm{font-size:18px;font-weight:800;}
   .ncard .top .ago{color:var(--muted);font-size:12px;font-weight:600;}
@@ -76,6 +80,10 @@
   </div>
 
   <div class="side" id="side">
+    <div class="panel" id="panel-call">
+      <h2>🔔 Зовут <span class="b hot" id="callBadge">0</span></h2>
+      <div id="callList"></div>
+    </div>
     <div class="panel" id="panel-ord">
       <h2>🆕 Заказы <span class="b" id="ordBadge">0</span></h2>
       <div id="ordList"></div>
@@ -92,7 +100,7 @@ const base=FB.replace(/\/$/,"");
 const COAL={light:20*60000, medium:15*60000, strong:10*60000, test:5000};
 const STR_LABEL={light:"Лёгкий 🌿", medium:"Средний ⚖️", strong:"Крепкий 🔥", test:"Тест 🧪"};
 const SESSION=75*60000;
-let sessions={}, orders={}, bookings={}, lastDue={}, seen=new Set(), first=true;
+let sessions={}, orders={}, bookings={}, calls={}, lastDue={}, seen=new Set(), first=true;
 
 function fmt(ms){ if(ms<0)ms=0; const s=Math.floor(ms/1000); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
 function money(n){ return (n||0).toLocaleString("ru-RU").replace(/,/g," ")+" so'm"; }
@@ -116,13 +124,15 @@ async function loadAll(){
   const h=await fetchJSON("/hookah.json");   if(h!==null) sessions=h;
   const o=await fetchJSON("/orders.json");   if(o!==null) orders=o;
   const b=await fetchJSON("/bookings.json"); if(b!==null) bookings=b;
-  // chime on a new order or booking
+  const c=await fetchJSON("/calls.json");    if(c!==null) calls=c;
+  // chime on a new call, order or booking
   let fresh=false;
+  Object.keys(calls).forEach(id=>{ if(!seen.has("c"+id)){ seen.add("c"+id); if(!first) fresh=true; } });
   Object.keys(orders).forEach(id=>{ if(!seen.has("o"+id)){ seen.add("o"+id); if(!first) fresh=true; } });
   Object.keys(bookings).forEach(id=>{ if(bookings[id].status==="pending" && !seen.has("b"+id)){ seen.add("b"+id); if(!first) fresh=true; } });
   if(fresh) beep(660);
   first=false;
-  renderCoal(); renderOrders(); renderBookings();
+  renderCoal(); renderCalls(); renderOrders(); renderBookings();
 }
 
 function renderCoal(){
@@ -176,9 +186,27 @@ function fitGrid(){   // fit every card on screen (no scroll); cap tile size so 
 window.addEventListener("resize", fitGrid);
 
 function updateSide(){
+  const c=document.getElementById("panel-call").style.display!=="none";
   const o=document.getElementById("panel-ord").style.display!=="none";
   const b=document.getElementById("panel-bk").style.display!=="none";
-  document.getElementById("side").style.display=(o||b)?"flex":"none";
+  document.getElementById("side").style.display=(c||o||b)?"flex":"none";
+}
+function renderCalls(){
+  const v=document.getElementById("callList");
+  const ids=Object.keys(calls||{}).filter(id=>calls[id]).sort((a,b)=>(calls[b].ts||0)-(calls[a].ts||0));
+  document.getElementById("callBadge").textContent=ids.length;
+  document.getElementById("panel-call").style.display=ids.length?"":"none";  // hide if empty
+  updateSide();
+  if(!ids.length){ v.innerHTML=""; return; }
+  v.innerHTML="";
+  ids.forEach(id=>{
+    const c=calls[id]; const bill=c.type==="bill";
+    const card=document.createElement("div"); card.className="ncard call"+(bill?" bill":"");
+    card.innerHTML=`<div class="top"><span class="nm">${bill?"🧾":"🔔"} ${c.name||c.table}</span>`+
+      `<span class="ago">${ago(c.ts||Date.now())} назад</span></div>`+
+      `<div class="kind">${bill?"🧾 Просит счёт":"🙋 Зовёт официанта"}</div>`;
+    v.appendChild(card);
+  });
 }
 function renderOrders(){
   const v=document.getElementById("ordList");
