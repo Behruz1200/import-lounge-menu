@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Import Lounge — Стафф</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root{--bg:#0b0c10;--card:#14161e;--line:#232733;--txt:#f2f3f7;--muted:#8b90a0;
     --gold:#ef4444;--gold2:#c01225;--ok:#1fb877;}
@@ -23,6 +24,11 @@
     background:var(--card);color:var(--txt);font-size:17px;font-weight:700;font-family:inherit;}
   .opt.save{background:linear-gradient(135deg,var(--ok),#0f7a4f);text-align:center;}
   .opt.link{background:#2a2f3a;text-align:center;text-decoration:none;}
+  #payQR{background:#fff;padding:16px;border-radius:16px;width:max-content;margin:6px auto 0;}
+  #payQR img,#payQR canvas{display:block;}
+  .qrhint{text-align:center;color:var(--muted);font-size:13px;margin:10px 0 4px;line-height:1.4;}
+  .payset{margin-top:8px;border-top:1px solid var(--line);padding-top:8px;}
+  .payset summary{cursor:pointer;color:var(--muted);font-weight:700;font-size:14px;padding:8px 2px;}
   .tabs{display:flex;gap:8px;}
   .tab{flex:1;text-align:center;padding:12px;border-radius:12px 12px 0 0;background:transparent;border:0;
     color:var(--muted);font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;}
@@ -101,12 +107,17 @@
 
   <div class="sheet" id="paysheet" onclick="if(event.target===this)closePaySettings()">
     <div class="box">
-      <h3>💳 Оплата картой — настройки</h3>
-      <label>Номер карты (UZCARD / HUMO)</label>
-      <input id="payNum" class="fld" type="text" inputmode="numeric" placeholder="8600 0000 0000 0000">
-      <label>Владелец карты</label>
-      <input id="payHolder" class="fld" type="text" placeholder="IMPORT LOUNGE">
-      <button class="opt save" onclick="savePaySettings()">💾 Сохранить</button>
+      <h3>💳 Оплата картой</h3>
+      <div id="payQR"></div>
+      <div class="qrhint">Покажите QR гостю — он откроет карту для перевода.<br>Mehmonga QR ni ko'rsating.</div>
+      <details class="payset">
+        <summary>⚙️ Настройки карты</summary>
+        <label>Номер карты (UZCARD / HUMO)</label>
+        <input id="payNum" class="fld" type="text" inputmode="numeric" placeholder="8600 0000 0000 0000">
+        <label>Владелец карты</label>
+        <input id="payHolder" class="fld" type="text" placeholder="IMPORT LOUNGE">
+        <button class="opt save" onclick="savePaySettings()">💾 Сохранить</button>
+      </details>
       <a class="opt link" id="payOpen" href="pay.html" target="_blank" rel="noopener">🔗 Открыть страницу оплаты</a>
     </div>
   </div>
@@ -233,7 +244,16 @@ function renderHk(){
 function openPick(t){ pickTable=t; document.getElementById("sheetTitle").textContent="Крепость · "+t.name;
   document.getElementById("sheet").classList.add("show"); }
 function closeSheet(){ document.getElementById("sheet").classList.remove("show"); }
+let _payQRdone=false;
+function buildPayQR(){
+  if(_payQRdone) return;
+  const url=new URL("pay.html", location.href).href;
+  try{ new QRCode(document.getElementById("payQR"),
+        {text:url, width:240, height:240, correctLevel:QRCode.CorrectLevel.M}); _payQRdone=true; }
+  catch(e){ document.getElementById("payQR").textContent="QR недоступен"; }
+}
 async function openPaySettings(){
+  buildPayQR();
   try{ const r=await fetch(base+"/pay.json",{cache:"no-store"}); const p=(await r.json())||{};
     document.getElementById("payNum").value=p.number||"";
     document.getElementById("payHolder").value=p.holder||""; }catch(e){}
