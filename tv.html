@@ -18,8 +18,8 @@
   header .clock{font-size:24px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;}
   .legend{flex:0 0 auto;display:flex;gap:14px;margin-bottom:12px;color:var(--muted);font-size:13px;flex-wrap:wrap;}
   .legend b{color:var(--txt);}
-  .grid{flex:1;min-height:0;overflow-y:auto;display:grid;gap:18px;align-content:start;
-    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}
+  .grid{flex:1;min-height:0;overflow:hidden;display:grid;gap:18px;align-content:start;
+    transform-origin:top center;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}
   .tile{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:20px 22px;
     display:flex;flex-direction:column;justify-content:center;align-items:flex-start;}
   .tile .tname{font-size:26px;font-weight:800;line-height:1.1;}
@@ -145,7 +145,16 @@ function renderCoal(){
       <div class="sess">Сеанс: ${fmt(Math.max(0,now-s.start))} ${sessRemain<=0?'<span class="end">· завершается</span>':(sessRemain<=10*60000?'<span class="end">· скоро конец</span>':'')}</div>`;
     grid.appendChild(t);
   });
+  fitGrid();
 }
+
+function fitGrid(){   // uniformly zoom the whole board down so all cards fit — never above 100%
+  const grid=document.getElementById("grid");
+  grid.style.transform="none";
+  const avail=grid.clientHeight, content=grid.scrollHeight;
+  if(content>avail+1 && content>0) grid.style.transform="scale("+(avail/content)+")";
+}
+window.addEventListener("resize", fitGrid);
 
 function updateSide(){
   const o=document.getElementById("panel-ord").style.display!=="none";
