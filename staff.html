@@ -62,14 +62,14 @@
     <div class="top"><h1>Import <span class="r">Lounge</span> · Стафф</h1><span class="clock" id="clock"></span></div>
     <div class="tabs">
       <button class="tab on" id="tab-ord" onclick="showTab('ord')">🆕 Заказы <span class="b" id="ordBadge">0</span></button>
-      <button class="tab" id="tab-hk" onclick="showTab('hk')">💨 Кальяны</button>
       <button class="tab" id="tab-bk" onclick="showTab('bk')">🍽 Брони <span class="b" id="bkBadge">0</span></button>
+      <button class="tab" id="tab-hk" onclick="showTab('hk')">💨 Кальяны</button>
     </div>
   </header>
   <main>
     <div id="view-ord"></div>
-    <div id="view-hk" style="display:none;"></div>
     <div id="view-bk" style="display:none;"></div>
+    <div id="view-hk" style="display:none;"></div>
   </main>
 
   <div class="sheet" id="sheet" onclick="if(event.target===this)closeSheet()">
