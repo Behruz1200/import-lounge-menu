@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
+<title>Import Lounge — Оплата картой</title>
+<script>
+/* ====== EDIT THESE TWO LINES WITH YOUR REAL CARD ====== */
+const CARD_NUMBER = "8600 0000 0000 0000";   // 16 digits (UZCARD 8600… / HUMO 9860…)
+const CARD_HOLDER = "IMPORT LOUNGE";
+/* ====================================================== */
+</script>
+<style>
+  :root{--bg:#0b0c10;--card:#14161e;--line:#232733;--txt:#f2f3f7;--muted:#8b90a0;
+    --gold:#ef4444;--gold2:#c01225;--ok:#1fb877;--blue:#3aa0ff;}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--txt);min-height:100vh;padding:24px 18px 40px;}
+  .wrap{max-width:420px;margin:0 auto;}
+  h1{font-size:20px;font-weight:800;text-align:center;}
+  h1 .r{color:var(--gold);}
+  .sub{color:var(--muted);font-size:13px;text-align:center;margin:6px 0 20px;line-height:1.45;}
+  .bank-card{background:linear-gradient(135deg,#ef4444,#7a0d18);border-radius:18px;padding:20px 20px 18px;
+    color:#fff;position:relative;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.45);}
+  .bank-card .lbl{font-size:12px;opacity:.85;font-weight:700;letter-spacing:1px;}
+  .bank-card .num{font-size:27px;font-weight:800;letter-spacing:2px;margin:16px 0 12px;font-variant-numeric:tabular-nums;}
+  .bank-card .row{display:flex;justify-content:space-between;font-size:13px;opacity:.92;}
+  .bank-card .smoke{position:absolute;right:-18px;top:-22px;font-size:120px;opacity:.13;}
+  .btn{display:block;width:100%;margin-top:12px;padding:16px;border:0;border-radius:14px;
+    font-size:16px;font-weight:800;font-family:inherit;color:#fff;cursor:pointer;transition:transform .12s;}
+  .btn:active{transform:scale(.98);}
+  .btn.copy{background:linear-gradient(135deg,var(--ok),#0f7a4f);font-size:18px;margin-top:18px;}
+  .amount{display:flex;gap:8px;margin-top:14px;}
+  .amount input{flex:1;padding:15px;border-radius:12px;border:1px solid var(--line);background:var(--card);
+    color:var(--txt);font-size:18px;font-weight:800;font-family:inherit;}
+  .amount button{width:auto;white-space:nowrap;margin:0;background:#2a2f3a;}
+  .apps-h{margin:22px 0 8px;color:var(--muted);font-size:13px;font-weight:700;text-align:center;}
+  .app{display:flex;align-items:center;gap:12px;text-align:left;}
+  .app .logo{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    font-size:18px;font-weight:900;flex:0 0 34px;}
+  .app.click{background:#1f1320;border:1px solid #3a2030;} .app.click .logo{background:#00aaff;}
+  .app.payme{background:#0f1a1c;border:1px solid #163a3a;} .app.payme .logo{background:#33d6c6;color:#06302b;}
+  .app.uzum{background:#1a1330;border:1px solid #2c2050;} .app.uzum .logo{background:#7c3aed;}
+  .app .meta{flex:1;} .app .meta b{display:block;font-size:16px;} .app .meta small{color:var(--muted);font-size:11px;}
+  .note{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.5;text-align:center;}
+  #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);opacity:0;
+    background:var(--ok);color:#fff;font-weight:800;padding:12px 22px;border-radius:30px;font-size:15px;
+    transition:all .25s;pointer-events:none;z-index:99;box-shadow:0 10px 30px rgba(0,0,0,.5);}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>💳 Import <span class="r">Lounge</span> — Оплата картой</h1>
+  <div class="sub">Переведите сумму счёта на карту заведения.<br>To'lovni muassasa kartasiga o'tkazing.</div>
+
+  <div class="bank-card">
+    <div class="lbl" id="bankLbl">UZCARD / HUMO</div>
+    <div class="num" id="cardNum">—</div>
+    <div class="row"><span id="holder">—</span><span>Import Lounge</span></div>
+    <div class="smoke">💨</div>
+  </div>
+
+  <button class="btn copy" onclick="copyCard()">📋 Скопировать номер · Raqamni nusxalash</button>
+
+  <div class="amount">
+    <input id="amount" type="number" inputmode="numeric" placeholder="Сумма / Summa (so'm)">
+    <button class="btn" onclick="copyAmount()">Копировать</button>
+  </div>
+
+  <div class="apps-h">Откройте приложение и вставьте номер · Ilovani oching va raqamni qo'ying</div>
+  <button class="btn app click" onclick="openApp('click')"><span class="logo">C</span>
+    <span class="meta"><b>Click</b><small>Скопировать номер и открыть · Nusxalab ochish</small></span></button>
+  <button class="btn app payme" onclick="openApp('payme')"><span class="logo">P</span>
+    <span class="meta"><b>Payme</b><small>Скопировать номер и открыть · Nusxalab ochish</small></span></button>
+  <button class="btn app uzum" onclick="openApp('uzum')"><span class="logo">U</span>
+    <span class="meta"><b>Uzum Bank</b><small>Скопировать номер и открыть · Nusxalab ochish</small></span></button>
+
+  <div class="note">После открытия приложения зайдите в «Перевод на карту» и вставьте номер (📋).<br>
+    Ilovada «Kartaga o'tkazma» bo'limiga kiring va raqamni qo'ying (📋).</div>
+</div>
+<div id="toast"></div>
+
+<script>
+const digits = CARD_NUMBER.replace(/\D/g,"");
+function fmt(n){ return n.replace(/(.{4})/g,"$1 ").trim(); }
+document.getElementById("cardNum").textContent = fmt(digits);
+document.getElementById("holder").textContent = CARD_HOLDER;
+document.getElementById("bankLbl").textContent = digits.startsWith("9860") ? "HUMO" : (digits.startsWith("8600") ? "UZCARD" : "UZCARD / HUMO");
+
+let toastT;
+function toast(msg){ const el=document.getElementById("toast"); el.textContent=msg; el.classList.add("show");
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show"),1600); }
+function copy(text){
+  if(navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+  const ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(e){} ta.remove();
+  return Promise.resolve();
+}
+function copyCard(){ copy(digits).then(()=>toast("✓ Номер скопирован · Nusxalandi")); }
+function copyAmount(){ const v=(document.getElementById("amount").value||"").replace(/\D/g,"");
+  if(!v){ toast("Введите сумму · Summani kiriting"); return; } copy(v).then(()=>toast("✓ Сумма скопирована")); }
+
+const SCHEMES={ click:["clickuz://","https://click.uz"], payme:["payme://","https://payme.uz"],
+  uzum:["uzumbank://","https://uzumbank.uz"] };
+function openApp(app){
+  copy(digits).then(()=>{
+    toast("✓ Номер скопирован — вставьте в приложении");
+    const [scheme,web]=SCHEMES[app]||["",""];
+    let left=false; const back=()=>{ if(!left) window.location.href=web; };
+    const t=setTimeout(back,1300);
+    window.addEventListener("blur",()=>{ left=true; clearTimeout(t); },{once:true});
+    try{ window.location.href=scheme; }catch(e){ clearTimeout(t); window.location.href=web; }
+  });
+}
+</script>
+</body>
+</html>

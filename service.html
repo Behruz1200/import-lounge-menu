@@ -23,6 +23,7 @@
   .btn.waiter{background:linear-gradient(135deg,#f5a623,#e0890a);}
   .btn.hookah{background:linear-gradient(135deg,#8b5cf6,#6d28d9);}
   .btn.bill{background:linear-gradient(135deg,var(--blue),#1f73c8);}
+  .btn.pay{background:linear-gradient(135deg,var(--ok),#0f7a4f);}
   .btn.scan{background:linear-gradient(135deg,var(--gold),var(--gold2));}
   .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:700;font-size:14px;padding:12px;}
   .hide{display:none;}
@@ -42,6 +43,7 @@
     <button class="btn waiter" onclick="send('waiter')">🔔 Позвать официанта</button>
     <button class="btn hookah" onclick="send('hookah')">💨 Позвать кальянщика</button>
     <button class="btn bill" onclick="send('bill')">🧾 Попросить счёт</button>
+    <button class="btn pay" onclick="openPay()">💳 Оплатить картой</button>
     <button class="btn ghost" onclick="startScan()">📷 Другой стол</button>
   </div>
 
@@ -80,6 +82,11 @@ function onQr(text){
 function send(kind){
   if(!TABLE) return;
   if(tg && tg.sendData){ tg.sendData(JSON.stringify({type:"call", table:TABLE, kind})); tg.close(); }
+}
+function openPay(){
+  const url="pay.html";
+  if(tg && tg.openLink){ tg.openLink(location.href.replace(/[^/]*$/, "")+url); }
+  else { window.open(url, "_blank"); }
 }
 if(tg && tg.onEvent){
   tg.onEvent("qrTextReceived", (e)=>onQr(e && e.data));
