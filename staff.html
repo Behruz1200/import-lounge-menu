@@ -63,7 +63,7 @@
     <div class="tabs">
       <button class="tab on" id="tab-ord" onclick="showTab('ord')">🆕 Заказы <span class="b" id="ordBadge">0</span></button>
       <button class="tab" id="tab-bk" onclick="showTab('bk')">🍽 Брони <span class="b" id="bkBadge">0</span></button>
-      <button class="tab" id="tab-hk" onclick="showTab('hk')">💨 Кальяны</button>
+      <button class="tab" id="tab-hk" onclick="showTab('hk')">💨 Кальяны <span class="b" id="hkBadge">0</span></button>
     </div>
   </header>
   <main>
@@ -169,13 +169,18 @@ async function loadSessions(){
   // drop stale "done" markers once the table's check no longer has a hookah
   Object.keys(done).forEach(id=>{ if(!pending[id]){ delete done[id];
     fetch(base+"/hookah_done/"+id+".json",{method:"DELETE"}).catch(()=>{}); } });
+  document.getElementById("hkBadge").textContent=hkCount();   // keep badge live even when tab hidden
 }
+function hkCount(){ const set=new Set(Object.keys(sessions||{}));
+  Object.keys(pending||{}).forEach(id=>{ if(!sessions[id] && pendCount(id)>(done[id]||0)) set.add(id); });
+  return set.size; }
 function renderHk(){
   const v=document.getElementById("view-hk"); v.innerHTML="";
   // active sessions, plus pending tables that still have an un-served hookah
   const set=new Set(Object.keys(sessions||{}));
   Object.keys(pending||{}).forEach(id=>{ if(!sessions[id] && pendCount(id) > (done[id]||0)) set.add(id); });
   const ids=Array.from(set);
+  document.getElementById("hkBadge").textContent=ids.length;
   if(!ids.length){ v.innerHTML='<div class="empty">Нет столов с кальяном 💨<br><small style="font-size:13px">Стол появится, когда кальян добавлен в чек Poster</small></div>'; return; }
   ids.sort((a,b)=>(((sessions[a]||pending[a]||{}).name)||a).localeCompare(((sessions[b]||pending[b]||{}).name)||b));
   ids.forEach(id=>{
