@@ -144,7 +144,11 @@ function renderCoal(){   // rebuild the grid only when called (from loadAll, eve
 function layoutCoal(){
   const grid=document.getElementById("grid");
   const n=Object.keys(tileEls).length; if(!n) return;
-  const gap=12, w=grid.clientWidth, h=grid.clientHeight;
+  // Pin the grid to the exact remaining viewport height so it never scrolls.
+  const rect=grid.getBoundingClientRect();
+  const h=Math.max(0, window.innerHeight - rect.top - 16);
+  grid.style.height=h+"px";
+  const gap=12, w=grid.clientWidth;
   if(w<=0||h<=0) return;
   // pick the column count that best fills the area (tiles ~4:3)
   let best=1, bestScore=1e9;
@@ -237,6 +241,7 @@ function tickClock(){ const d=new Date(); document.getElementById("clock").textC
   String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
 
 loadAll();
+setTimeout(layoutCoal,400); setTimeout(layoutCoal,1500);   // re-fit once dimensions settle
 setInterval(tickClock,1000);
 setInterval(tickCoal,1000);     // live coal countdown (in-place, lightweight)
 setInterval(loadAll,4000);      // refresh data from Firebase + reconcile lists
