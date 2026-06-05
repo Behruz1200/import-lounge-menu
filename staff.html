@@ -198,7 +198,8 @@ function openPick(t){ pickTable=t; document.getElementById("sheetTitle").textCon
 function closeSheet(){ document.getElementById("sheet").classList.remove("show"); }
 async function startHookah(str){
   if(!pickTable) return; const now=Date.now(); const id=pickTable.id;
-  sessions[id]={str,name:pickTable.name,start:now,coal:now};
+  const hk=(((pending[id]||{}).items||[]).map(i=>i.n).filter(Boolean).join(", "))||"";
+  sessions[id]={str,name:pickTable.name,start:now,coal:now,hk};
   try{ await fetch(base+"/hookah/"+id+".json",{method:"PUT",
     body:JSON.stringify(sessions[id])}); }catch(e){}
   delete done[id]; fetch(base+"/hookah_done/"+id+".json",{method:"DELETE"}).catch(()=>{});
