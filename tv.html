@@ -100,10 +100,18 @@ function beep(freq){ try{ actx=actx||new (window.AudioContext||window.webkitAudi
   o.connect(g); g.connect(actx.destination); g.gain.setValueAtTime(.16,actx.currentTime);
   o.start(); o.stop(actx.currentTime+.35);}catch(e){} }
 
+async function fetchJSON(path){
+  try{
+    const c=new AbortController(); const tid=setTimeout(()=>c.abort(),5000);
+    const r=await fetch(base+path+"?cb="+Date.now(),{cache:"no-store",signal:c.signal});
+    clearTimeout(tid);
+    return (await r.json())||{};
+  }catch(e){ return null; }   // null = skip this cycle, keep previous data
+}
 async function loadAll(){
-  try{ sessions=(await (await fetch(base+"/hookah.json",{cache:"no-store"})).json())||{}; }catch(e){}
-  try{ orders=(await (await fetch(base+"/orders.json",{cache:"no-store"})).json())||{}; }catch(e){}
-  try{ bookings=(await (await fetch(base+"/bookings.json",{cache:"no-store"})).json())||{}; }catch(e){}
+  const h=await fetchJSON("/hookah.json");   if(h!==null) sessions=h;
+  const o=await fetchJSON("/orders.json");   if(o!==null) orders=o;
+  const b=await fetchJSON("/bookings.json"); if(b!==null) bookings=b;
   // chime on a new order or booking
   let fresh=false;
   Object.keys(orders).forEach(id=>{ if(!seen.has("o"+id)){ seen.add("o"+id); if(!first) fresh=true; } });
