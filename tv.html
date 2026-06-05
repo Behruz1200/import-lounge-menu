@@ -3,101 +3,127 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Import Lounge — Контроль углей</title>
+<title>Import Lounge — TV</title>
 <style>
   :root{--bg:#0b0c10;--card:#14161e;--line:#232733;--txt:#f2f3f7;--muted:#8b90a0;
-    --gold:#ef4444;--gold2:#c01225;--ok:#1fb877;--warn:#f5a623;}
+    --gold:#ef4444;--gold2:#c01225;--ok:#1fb877;--warn:#f5a623;--blue:#3aa0ff;}
   *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
-  body{background:var(--bg);color:var(--txt);padding:22px 26px;min-height:100vh;}
-  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
-  header h1{font-size:30px;font-weight:800;letter-spacing:.5px;}
+  html,body{height:100%;}
+  body{background:var(--bg);color:var(--txt);display:flex;height:100vh;overflow:hidden;}
+  /* ---- main (coal) ---- */
+  .main{flex:1;min-width:0;padding:22px 26px;overflow-y:auto;}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  header h1{font-size:28px;font-weight:800;letter-spacing:.5px;}
   header h1 .r{color:var(--gold);}
   header .clock{font-size:26px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;}
-  .legend{display:flex;gap:18px;margin-bottom:16px;color:var(--muted);font-size:15px;flex-wrap:wrap;}
+  .legend{display:flex;gap:16px;margin-bottom:16px;color:var(--muted);font-size:14px;flex-wrap:wrap;}
   .legend b{color:var(--txt);}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;}
-  .tile{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:20px 22px;
-    position:relative;overflow:hidden;transition:.2s;}
-  .tile .tname{font-size:26px;font-weight:800;}
-  .tile .str{display:inline-block;margin-top:6px;font-size:14px;font-weight:700;padding:4px 12px;border-radius:20px;
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+  .tile{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:18px 20px;overflow:hidden;}
+  .tile .tname{font-size:24px;font-weight:800;}
+  .tile .str{display:inline-block;margin-top:6px;font-size:13px;font-weight:700;padding:4px 12px;border-radius:20px;
     background:rgba(255,255,255,.06);color:var(--muted);}
-  .tile .count{font-size:60px;font-weight:800;font-variant-numeric:tabular-nums;margin:10px 0 2px;letter-spacing:1px;}
-  .tile .cap{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
-  .tile .sess{margin-top:12px;font-size:15px;color:var(--muted);}
+  .tile .count{font-size:56px;font-weight:800;font-variant-numeric:tabular-nums;margin:8px 0 2px;letter-spacing:1px;}
+  .tile .cap{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .tile .sess{margin-top:10px;font-size:14px;color:var(--muted);}
   .tile.ok{border-color:#26303f;}
   .tile.soon{border-color:var(--warn);}
   .tile.due{border-color:var(--gold);background:linear-gradient(160deg,#3a1418,#1a0d10);animation:pulse 1s infinite;}
-  .tile.due .count{color:#ff5a5a;}
-  .tile.due .cap{color:#ff8a8a;font-weight:800;}
-  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.0);}50%{box-shadow:0 0 28px 4px rgba(239,68,68,.55);}}
-  .empty{text-align:center;color:var(--muted);font-size:22px;padding:90px 20px;}
+  .tile.due .count{color:#ff5a5a;} .tile.due .cap{color:#ff8a8a;font-weight:800;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0);}50%{box-shadow:0 0 28px 4px rgba(239,68,68,.55);}}
+  .empty{text-align:center;color:var(--muted);font-size:20px;padding:70px 20px;}
   .end{color:var(--warn);font-weight:700;}
+  /* ---- side (orders + bookings) ---- */
+  .side{width:430px;flex:0 0 430px;border-left:1px solid var(--line);background:#0e0f14;
+    display:flex;flex-direction:column;}
+  .panel{flex:1;min-height:0;padding:16px 16px;overflow-y:auto;}
+  .panel + .panel{border-top:1px solid var(--line);}
+  .panel h2{font-size:19px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .panel h2 .b{min-width:22px;text-align:center;font-size:13px;padding:2px 8px;border-radius:20px;background:var(--gold);color:#fff;}
+  .ncard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;
+    animation:in .25s ease;}
+  @keyframes in{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .ncard.ord{border-left:4px solid var(--gold);}
+  .ncard.bk{border-left:4px solid var(--warn);}
+  .ncard.bk.conf{border-left:4px solid var(--ok);}
+  .ncard .top{display:flex;justify-content:space-between;align-items:baseline;}
+  .ncard .top .nm{font-size:18px;font-weight:800;}
+  .ncard .top .ago{color:var(--muted);font-size:12px;font-weight:600;}
+  .ncard .it{font-size:14px;color:#d7dae2;margin-top:5px;line-height:1.35;}
+  .ncard .it .hk{color:var(--gold);font-weight:700;}
+  .ncard .tot{margin-top:6px;font-weight:800;color:var(--gold);}
+  .pempty{color:var(--muted);font-size:15px;padding:14px 4px;}
 </style>
 </head>
 <body>
-  <header>
-    <h1>💨 Import <span class="r">Lounge</span> · Контроль углей</h1>
-    <div class="clock" id="clock">--:--</div>
-  </header>
-  <div class="legend">
-    <span>🟢 <b>идёт</b></span>
-    <span>🟠 <b>скоро угли</b> (≤2 мин)</span>
-    <span>🔴 <b>поменять угли</b></span>
-    <span style="margin-left:auto;">Лёгкий 20м · Средний 15м · Крепкий 10м · Сеанс ~75м</span>
+  <div class="main">
+    <header>
+      <h1>💨 Import <span class="r">Lounge</span> · Контроль углей</h1>
+      <div class="clock" id="clock">--:--</div>
+    </header>
+    <div class="legend">
+      <span>🟢 <b>идёт</b></span>
+      <span>🟠 <b>скоро угли</b> (≤2 мин)</span>
+      <span>🔴 <b>поменять угли</b></span>
+      <span style="margin-left:auto;">Лёгкий 20м · Средний 15м · Крепкий 10м · Сеанс ~75м</span>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="empty" style="display:none;">Нет активных кальянов 💨</div>
   </div>
-  <div class="grid" id="grid"></div>
-  <div class="empty" id="empty" style="display:none;">Нет активных кальянов 💨</div>
+
+  <div class="side">
+    <div class="panel">
+      <h2>🆕 Заказы <span class="b" id="ordBadge">0</span></h2>
+      <div id="ordList"></div>
+    </div>
+    <div class="panel">
+      <h2>🍽 Брони <span class="b" id="bkBadge">0</span></h2>
+      <div id="bkList"></div>
+    </div>
+  </div>
 
 <script>
 const FB="https://import-lounge-default-rtdb.firebaseio.com";
+const base=FB.replace(/\/$/,"");
 const COAL={light:20*60000, medium:15*60000, strong:10*60000, test:5000};
 const STR_LABEL={light:"Лёгкий 🌿", medium:"Средний ⚖️", strong:"Крепкий 🔥", test:"Тест 🧪"};
-const SESSION=75*60000;          // total session length to flag "ending"
-let sessions={};                 // tableId -> {str,name,start,coal}
-let lastDue={};                  // tableId -> bool, to beep only on transition
+const SESSION=75*60000;
+let sessions={}, orders={}, bookings={}, lastDue={}, seen=new Set(), first=true;
 
-function fmt(ms){
-  if(ms<0) ms=0;
-  const s=Math.floor(ms/1000), m=Math.floor(s/60), ss=s%60;
-  return m+":"+String(ss).padStart(2,"0");
-}
-let audioCtx;
-function beep(){
-  try{
-    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
-    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-    o.type="square"; o.frequency.value=880; o.connect(g); g.connect(audioCtx.destination);
-    g.gain.setValueAtTime(.18,audioCtx.currentTime);
-    o.start(); o.stop(audioCtx.currentTime+.35);
-  }catch(e){}
+function fmt(ms){ if(ms<0)ms=0; const s=Math.floor(ms/1000); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+function money(n){ return (n||0).toLocaleString("ru-RU").replace(/,/g," ")+" so'm"; }
+function ago(ts){ const s=Math.floor((Date.now()-ts)/1000); if(s<60)return s+" сек";
+  const m=Math.floor(s/60); if(m<60)return m+" мин"; return Math.floor(m/60)+" ч "+(m%60)+" мин"; }
+let actx;
+function beep(freq){ try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const o=actx.createOscillator(),g=actx.createGain(); o.type="square"; o.frequency.value=freq||880;
+  o.connect(g); g.connect(actx.destination); g.gain.setValueAtTime(.16,actx.currentTime);
+  o.start(); o.stop(actx.currentTime+.35);}catch(e){} }
+
+async function loadAll(){
+  try{ sessions=(await (await fetch(base+"/hookah.json",{cache:"no-store"})).json())||{}; }catch(e){}
+  try{ orders=(await (await fetch(base+"/orders.json",{cache:"no-store"})).json())||{}; }catch(e){}
+  try{ bookings=(await (await fetch(base+"/bookings.json",{cache:"no-store"})).json())||{}; }catch(e){}
+  // chime on a new order or booking
+  let fresh=false;
+  Object.keys(orders).forEach(id=>{ if(!seen.has("o"+id)){ seen.add("o"+id); if(!first) fresh=true; } });
+  Object.keys(bookings).forEach(id=>{ if(bookings[id].status==="pending" && !seen.has("b"+id)){ seen.add("b"+id); if(!first) fresh=true; } });
+  if(fresh) beep(660);
+  first=false;
+  renderOrders(); renderBookings();
 }
 
-async function load(){
-  try{
-    const r=await fetch(FB.replace(/\/$/,"")+"/hookah.json",{cache:"no-store"});
-    sessions=(await r.json())||{};
-  }catch(e){}
-}
-function render(){
-  const now=Date.now();
-  const grid=document.getElementById("grid");
+function renderCoal(){
+  const now=Date.now(); const grid=document.getElementById("grid");
   const ids=Object.keys(sessions||{});
   document.getElementById("empty").style.display=ids.length?"none":"block";
-  // sort: due first, then by soonest coal change
-  ids.sort((a,b)=>{
-    const ra=(sessions[a].coal+COAL[sessions[a].str||"medium"])-now;
-    const rb=(sessions[b].coal+COAL[sessions[b].str||"medium"])-now;
-    return ra-rb;
-  });
+  ids.sort((a,b)=>((sessions[a].coal+COAL[sessions[a].str||"medium"])-now)-((sessions[b].coal+COAL[sessions[b].str||"medium"])-now));
   grid.innerHTML="";
   ids.forEach(id=>{
     const s=sessions[id]; const intv=COAL[s.str||"medium"];
-    const remain=(s.coal+intv)-now;
-    const sessRemain=(s.start+SESSION)-now;
-    let cls="ok"; if(remain<=0) cls="due"; else if(remain<=120000) cls="soon";
-    const due=remain<=0;
-    if(due && !lastDue[id]) beep();
-    lastDue[id]=due;
+    const remain=(s.coal+intv)-now, sessRemain=(s.start+SESSION)-now;
+    let cls="ok"; if(remain<=0)cls="due"; else if(remain<=120000)cls="soon";
+    const due=remain<=0; if(due && !lastDue[id]) beep(880); lastDue[id]=due;
     const t=document.createElement("div"); t.className="tile "+cls;
     t.innerHTML=`<div class="tname">${s.name||("Стол "+id)}</div>
       <div class="str">${STR_LABEL[s.str||"medium"]||"Средний"}</div>
@@ -107,12 +133,48 @@ function render(){
     grid.appendChild(t);
   });
 }
+
+function renderOrders(){
+  const v=document.getElementById("ordList");
+  const ids=Object.keys(orders).filter(id=>orders[id] && orders[id].status!=="done")
+              .sort((a,b)=>(orders[b].ts||0)-(orders[a].ts||0));
+  document.getElementById("ordBadge").textContent=ids.length;
+  if(!ids.length){ v.innerHTML='<div class="pempty">Новых заказов нет ✅</div>'; return; }
+  v.innerHTML="";
+  ids.forEach(id=>{
+    const o=orders[id];
+    const items=(o.items||[]).map(it=>`<div class="it">${it.h?'<span class="hk">💨 </span>':''}${it.n} ×${it.q}`+(it.o?` · ${it.o}`:"")+`</div>`).join("");
+    const c=document.createElement("div"); c.className="ncard ord";
+    c.innerHTML=`<div class="top"><span class="nm">🪑 ${o.name||o.table}</span><span class="ago">${ago(o.ts||Date.now())} назад</span></div>`+
+      items+`<div class="tot">${money(o.total)}</div>`;
+    v.appendChild(c);
+  });
+}
+
+function renderBookings(){
+  const v=document.getElementById("bkList");
+  const ids=Object.keys(bookings||{});
+  ids.sort((a,b)=>(bookings[a].date+bookings[a].time).localeCompare(bookings[b].date+bookings[b].time));
+  ids.sort((a,b)=>(bookings[a].status==="pending"?0:1)-(bookings[b].status==="pending"?0:1));
+  const pend=ids.filter(id=>bookings[id].status==="pending").length;
+  document.getElementById("bkBadge").textContent=pend;
+  if(!ids.length){ v.innerHTML='<div class="pempty">Броней нет 🍽</div>'; return; }
+  v.innerHTML="";
+  ids.forEach(id=>{
+    const b=bookings[id]; const conf=b.status==="confirmed";
+    const c=document.createElement("div"); c.className="ncard bk"+(conf?" conf":"");
+    c.innerHTML=`<div class="top"><span class="nm">🪑 ${b.table||"-"} ${conf?"✅":"🆕"}</span><span class="ago">${b.date} ${b.time}</span></div>`+
+      `<div class="it">👤 ${b.name||"-"} · 👥 ${b.guests||"-"}</div>`+(b.phone?`<div class="it">☎️ ${b.phone}</div>`:"");
+    v.appendChild(c);
+  });
+}
+
 function tickClock(){ const d=new Date(); document.getElementById("clock").textContent=
   String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
 
-load().then(render);
-setInterval(()=>{ tickClock(); render(); },1000);   // live countdown
-setInterval(load,4000);                              // refresh sessions from Firebase
+loadAll();
+setInterval(()=>{ tickClock(); renderCoal(); },1000);   // live coal countdown
+setInterval(loadAll,4000);                              // refresh data from Firebase
 tickClock();
 </script>
 </body>
