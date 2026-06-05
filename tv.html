@@ -71,12 +71,12 @@
     <div class="empty" id="empty" style="display:none;">Нет активных кальянов 💨</div>
   </div>
 
-  <div class="side">
-    <div class="panel">
+  <div class="side" id="side">
+    <div class="panel" id="panel-ord">
       <h2>🆕 Заказы <span class="b" id="ordBadge">0</span></h2>
       <div id="ordList"></div>
     </div>
-    <div class="panel">
+    <div class="panel" id="panel-bk">
       <h2>🍽 Брони <span class="b" id="bkBadge">0</span></h2>
       <div id="bkList"></div>
     </div>
@@ -134,12 +134,19 @@ function renderCoal(){
   });
 }
 
+function updateSide(){
+  const o=document.getElementById("panel-ord").style.display!=="none";
+  const b=document.getElementById("panel-bk").style.display!=="none";
+  document.getElementById("side").style.display=(o||b)?"flex":"none";
+}
 function renderOrders(){
   const v=document.getElementById("ordList");
   const ids=Object.keys(orders).filter(id=>orders[id] && orders[id].status!=="done")
               .sort((a,b)=>(orders[b].ts||0)-(orders[a].ts||0));
   document.getElementById("ordBadge").textContent=ids.length;
-  if(!ids.length){ v.innerHTML='<div class="pempty">Новых заказов нет ✅</div>'; return; }
+  document.getElementById("panel-ord").style.display=ids.length?"":"none";  // hide if empty
+  updateSide();
+  if(!ids.length){ v.innerHTML=""; return; }
   v.innerHTML="";
   ids.forEach(id=>{
     const o=orders[id];
@@ -158,7 +165,9 @@ function renderBookings(){
   ids.sort((a,b)=>(bookings[a].status==="pending"?0:1)-(bookings[b].status==="pending"?0:1));
   const pend=ids.filter(id=>bookings[id].status==="pending").length;
   document.getElementById("bkBadge").textContent=pend;
-  if(!ids.length){ v.innerHTML='<div class="pempty">Броней нет 🍽</div>'; return; }
+  document.getElementById("panel-bk").style.display=ids.length?"":"none";   // hide if empty
+  updateSide();
+  if(!ids.length){ v.innerHTML=""; return; }
   v.innerHTML="";
   ids.forEach(id=>{
     const b=bookings[id]; const conf=b.status==="confirmed";
