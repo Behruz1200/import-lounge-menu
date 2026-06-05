@@ -155,15 +155,19 @@ function fitGrid(){   // fit every card on screen (no scroll); cap tile size so 
   const top=grid.getBoundingClientRect().top;
   const W=grid.clientWidth, H=Math.max(0, window.innerHeight - top - 16);
   const gap=18, maxW=360, ratio=0.62;   // ratio = card height / width (the original proportions)
-  let best=0, bc=1;
+  let best=null;
   for(let c=1;c<=n;c++){
     const rows=Math.ceil(n/c);
     const wFit=(W-gap*(c-1))/c;
     const hFit=(H-gap*(rows-1))/rows;
     const tw=Math.min(wFit, hFit/ratio, maxW);   // widest tile that fits width, height & the cap
-    if(tw>best){ best=tw; bc=c; }
+    const empty=c*rows-n;                         // wasted cells in the grid
+    // pick biggest tile; on ties prefer the most balanced grid (fewest gaps, then more columns)
+    if(!best || tw>best.tw+0.5 ||
+       (Math.abs(tw-best.tw)<=0.5 && (empty<best.empty || (empty===best.empty && c>best.c))))
+      best={tw,empty,c};
   }
-  const tileW=Math.max(80,best), tileH=tileW*ratio;
+  const bc=best.c, tileW=Math.max(80,best.tw), tileH=tileW*ratio;
   grid.style.height=H+"px";
   grid.style.gridTemplateColumns="repeat("+bc+","+tileW+"px)";
   grid.style.gridAutoRows=tileH+"px";
