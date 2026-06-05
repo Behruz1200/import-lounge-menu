@@ -488,12 +488,13 @@ function thumbEl(it,cat,big){
   }
   return wrap;
 }
-function buildFeatured(){
+function buildFeatured(only){
   const wrap=document.createElement("div"); wrap.className="feat-wrap";
   const head=document.createElement("div"); head.className="feat-head";
   head.innerHTML=`★ ${I18N[LANG].feat}`;
   const rail=document.createElement("div"); rail.className="feat-rail";
-  MENU.forEach(cat=>cat.items.forEach(it=>{ if(!it.feat) return;
+  const cats = only ? [only] : MENU;
+  cats.forEach(cat=>cat.items.forEach(it=>{ if(!it.feat) return;
     const c=document.createElement("div"); c.className="feat-card";
     const im=document.createElement("div"); im.className="feat-img"; im.style.background=cat.grad;
     const badge=document.createElement("div"); badge.className="feat-badge"; badge.textContent="★ "+I18N[LANG].hit; im.appendChild(badge);
@@ -596,8 +597,8 @@ function render(){
     s.appendChild(g); c.appendChild(s); return;
   }
   /* Show only the active category — short, no long scroll. */
-  if(activeCat===0 && MENU.some(cat=>cat.items.some(it=>it.feat))) c.appendChild(buildFeatured());
   const cat=MENU[activeCat]; if(!cat) return;
+  if(cat.items.some(it=>it.feat)) c.appendChild(buildFeatured(cat));   // хиты of THIS category
   const s=document.createElement("div"); s.className="section"; s.id="sec-"+activeCat;
   const h=document.createElement("h2"); h.innerHTML=`${cat.emoji} ${cat[LANG]} <span class="bar"></span>`; s.appendChild(h);
   const g=document.createElement("div"); g.className="grid";
