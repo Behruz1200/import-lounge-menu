@@ -14,6 +14,15 @@
   .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
   .top h1{font-size:19px;font-weight:800;}.top h1 .r{color:var(--gold);}
   .top .clock{color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums;}
+  .top .right{display:flex;align-items:center;gap:10px;}
+  .paybtn{background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:10px;
+    padding:8px 12px;font-weight:800;font-family:inherit;font-size:14px;cursor:pointer;}
+  .paybtn:active{transform:scale(.97);}
+  .sheet .box label{display:block;font-size:13px;color:var(--muted);font-weight:700;margin:12px 0 6px;}
+  .sheet .box input.fld{width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);
+    background:var(--card);color:var(--txt);font-size:17px;font-weight:700;font-family:inherit;}
+  .opt.save{background:linear-gradient(135deg,var(--ok),#0f7a4f);text-align:center;}
+  .opt.link{background:#2a2f3a;text-align:center;text-decoration:none;}
   .tabs{display:flex;gap:8px;}
   .tab{flex:1;text-align:center;padding:12px;border-radius:12px 12px 0 0;background:transparent;border:0;
     color:var(--muted);font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;}
@@ -60,7 +69,9 @@
 </head>
 <body>
   <header>
-    <div class="top"><h1>Import <span class="r">Lounge</span> · Стафф</h1><span class="clock" id="clock"></span></div>
+    <div class="top"><h1>Import <span class="r">Lounge</span> · Стафф</h1>
+      <div class="right"><button class="paybtn" onclick="openPaySettings()">💳 Оплата</button>
+      <span class="clock" id="clock"></span></div></div>
     <div class="tabs">
       <button class="tab on" id="tab-ord" onclick="showTab('ord')">🆕 Заказы <span class="b" id="ordBadge">0</span></button>
       <button class="tab" id="tab-bk" onclick="showTab('bk')">🍽 Брони <span class="b" id="bkBadge">0</span></button>
@@ -85,6 +96,18 @@
           color:var(--txt);font-size:16px;font-weight:700;font-family:inherit;">
         <button class="opt" style="width:auto;margin:0;white-space:nowrap" onclick="startCustom()">⏱ Старт</button>
       </div>
+    </div>
+  </div>
+
+  <div class="sheet" id="paysheet" onclick="if(event.target===this)closePaySettings()">
+    <div class="box">
+      <h3>💳 Оплата картой — настройки</h3>
+      <label>Номер карты (UZCARD / HUMO)</label>
+      <input id="payNum" class="fld" type="text" inputmode="numeric" placeholder="8600 0000 0000 0000">
+      <label>Владелец карты</label>
+      <input id="payHolder" class="fld" type="text" placeholder="IMPORT LOUNGE">
+      <button class="opt save" onclick="savePaySettings()">💾 Сохранить</button>
+      <a class="opt link" id="payOpen" href="pay.html" target="_blank" rel="noopener">🔗 Открыть страницу оплаты</a>
     </div>
   </div>
 
@@ -210,6 +233,20 @@ function renderHk(){
 function openPick(t){ pickTable=t; document.getElementById("sheetTitle").textContent="Крепость · "+t.name;
   document.getElementById("sheet").classList.add("show"); }
 function closeSheet(){ document.getElementById("sheet").classList.remove("show"); }
+async function openPaySettings(){
+  try{ const r=await fetch(base+"/pay.json",{cache:"no-store"}); const p=(await r.json())||{};
+    document.getElementById("payNum").value=p.number||"";
+    document.getElementById("payHolder").value=p.holder||""; }catch(e){}
+  document.getElementById("paysheet").classList.add("show");
+}
+function closePaySettings(){ document.getElementById("paysheet").classList.remove("show"); }
+async function savePaySettings(){
+  const number=(document.getElementById("payNum").value||"").trim();
+  const holder=(document.getElementById("payHolder").value||"").trim().toUpperCase();
+  try{ await fetch(base+"/pay.json",{method:"PUT",
+    body:JSON.stringify({number,holder})}); }catch(e){}
+  closePaySettings();
+}
 function startCustom(){
   const el=document.getElementById("customMin"); const v=parseInt(el.value,10);
   if(!v||v<1){ el.focus(); el.style.borderColor="var(--gold)"; return; }

@@ -83,11 +83,20 @@ const CARD_HOLDER = "IMPORT LOUNGE";
 <div id="toast"></div>
 
 <script>
-const digits = CARD_NUMBER.replace(/\D/g,"");
+const FB="https://import-lounge-default-rtdb.firebaseio.com";
+let digits="";
 function fmt(n){ return n.replace(/(.{4})/g,"$1 ").trim(); }
-document.getElementById("cardNum").textContent = fmt(digits);
-document.getElementById("holder").textContent = CARD_HOLDER;
-document.getElementById("bankLbl").textContent = digits.startsWith("9860") ? "HUMO" : (digits.startsWith("8600") ? "UZCARD" : "UZCARD / HUMO");
+function applyCard(num, holder){
+  digits=(num||"").replace(/\D/g,"");
+  document.getElementById("cardNum").textContent = fmt(digits) || "—";
+  document.getElementById("holder").textContent = holder || "";
+  document.getElementById("bankLbl").textContent = digits.startsWith("9860") ? "HUMO" : (digits.startsWith("8600") ? "UZCARD" : "UZCARD / HUMO");
+}
+// Card is managed from the staff tablet (Firebase /pay); fall back to the constants above.
+applyCard(CARD_NUMBER, CARD_HOLDER);
+fetch(FB+"/pay.json",{cache:"no-store"}).then(r=>r.json()).then(p=>{
+  if(p && p.number) applyCard(p.number, p.holder || CARD_HOLDER);
+}).catch(()=>{});
 
 let toastT;
 function toast(msg){ const el=document.getElementById("toast"); el.textContent=msg; el.classList.add("show");
