@@ -63,11 +63,13 @@
     <div class="tabs">
       <button class="tab on" id="tab-ord" onclick="showTab('ord')">🆕 Заказы <span class="b" id="ordBadge">0</span></button>
       <button class="tab" id="tab-hk" onclick="showTab('hk')">💨 Кальяны</button>
+      <button class="tab" id="tab-bk" onclick="showTab('bk')">🍽 Брони <span class="b" id="bkBadge">0</span></button>
     </div>
   </header>
   <main>
     <div id="view-ord"></div>
     <div id="view-hk" style="display:none;"></div>
+    <div id="view-bk" style="display:none;"></div>
   </main>
 
   <div class="sheet" id="sheet" onclick="if(event.target===this)closeSheet()">
@@ -84,7 +86,7 @@
 const FB="https://import-lounge-default-rtdb.firebaseio.com";
 const base=FB.replace(/\/$/,"");
 const STR={light:"Лёгкий 🌿",medium:"Средний ⚖️",strong:"Крепкий 🔥",test:"Тест 🧪 (5 сек)"};
-let orders={}, sessions={}, pending={}, done={}, calls={}, seen=new Set(), firstLoad=true, pickTable=null;
+let orders={}, sessions={}, pending={}, done={}, calls={}, bookings={}, seen=new Set(), firstLoad=true, pickTable=null;
 function pendCount(id){ return (((pending[id]||{}).items)||[]).reduce((s,i)=>s+(i.q||1),0); }
 
 function money(n){ return (n||0).toLocaleString("ru-RU").replace(/,/g," ")+" so'm"; }
@@ -97,11 +99,12 @@ function beep(){ try{ actx=actx||new (window.AudioContext||window.webkitAudioCon
   o.start(); o.stop(actx.currentTime+.4);}catch(e){} }
 
 function showTab(t){
-  document.getElementById("tab-ord").classList.toggle("on",t==="ord");
-  document.getElementById("tab-hk").classList.toggle("on",t==="hk");
-  document.getElementById("view-ord").style.display=t==="ord"?"block":"none";
-  document.getElementById("view-hk").style.display=t==="hk"?"block":"none";
+  ["ord","hk","bk"].forEach(x=>{
+    document.getElementById("tab-"+x).classList.toggle("on",t===x);
+    document.getElementById("view-"+x).style.display=t===x?"block":"none";
+  });
   if(t==="hk") renderHk();
+  if(t==="bk") renderBookings();
 }
 
 /* ---------- ORDERS ---------- */
@@ -214,12 +217,53 @@ async function stopHookah(id){
     fetch(base+"/hookah_done/"+id+".json",{method:"PUT",body:JSON.stringify(cur)}).catch(()=>{}); }
   renderHk(); }
 
+/* ---------- BOOKINGS ---------- */
+async function loadBookings(){
+  try{ const r=await fetch(base+"/bookings.json",{cache:"no-store"}); bookings=(await r.json())||{}; }catch(e){}
+  const pend=Object.values(bookings).filter(b=>b.status==="pending").length;
+  document.getElementById("bkBadge").textContent=pend;
+}
+function renderBookings(){
+  const v=document.getElementById("view-bk"); v.innerHTML="";
+  const ids=Object.keys(bookings||{});
+  ids.sort((a,b)=>((bookings[a].date+bookings[a].time)).localeCompare(bookings[b].date+bookings[b].time));
+  // pending first
+  ids.sort((a,b)=>(bookings[a].status==="pending"?0:1)-(bookings[b].status==="pending"?0:1));
+  if(!ids.length){ v.innerHTML='<div class="empty">Броней нет 🍽</div>'; return; }
+  ids.forEach(id=>{
+    const b=bookings[id]; const pend=b.status==="pending";
+    const card=document.createElement("div"); card.className="ordcard"+(pend?"":" call bill");
+    card.innerHTML=`<div class="h"><span class="t">🪑 ${b.table||"-"}${pend?" · 🆕":" · ✅"}</span>`+
+      `<span class="ago">${b.date} ${b.time}</span></div>`+
+      `<div class="it">👤 ${b.name||"-"}  ·  👥 ${b.guests||"-"}</div>`+
+      (b.phone?`<div class="it">☎️ ${b.phone}</div>`:"");
+    const row=document.createElement("div"); row.style.cssText="display:flex;gap:8px;margin-top:10px;";
+    if(pend){
+      const ok=document.createElement("button"); ok.className="ok"; ok.style.flex="1"; ok.textContent="✅ Подтвердить";
+      ok.onclick=()=>bookingAction(id,"confirm");
+      const no=document.createElement("button"); no.className="ok"; no.style.cssText="flex:1;background:#3a2a2a;color:#ff9b9b;";
+      no.textContent="❌ Отклонить"; no.onclick=()=>bookingAction(id,"decline");
+      row.append(ok,no);
+    } else {
+      const cancel=document.createElement("button"); cancel.className="ok"; cancel.style.cssText="flex:1;background:#3a2a2a;color:#ff9b9b;";
+      cancel.textContent="✖ Отменить бронь"; cancel.onclick=()=>bookingAction(id,"cancel");
+      row.append(cancel);
+    }
+    card.appendChild(row); v.appendChild(card);
+  });
+}
+async function bookingAction(id, action){
+  try{ await fetch(base+"/booking_actions/"+id+".json",{method:"PUT",body:JSON.stringify(action)}); }catch(e){}
+  delete bookings[id]; renderBookings(); loadBookings();   // bot applies it within ~20s
+}
+
 /* ---------- BOOT ---------- */
 function tickClock(){ const d=new Date(); document.getElementById("clock").textContent=
   String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
-loadOrders(); loadSessions();
+loadOrders(); loadSessions(); loadBookings();
 setInterval(loadOrders,4000);
 setInterval(()=>{ loadSessions().then(()=>{ if(document.getElementById("view-hk").style.display!=="none") renderHk(); }); },5000);
+setInterval(()=>{ loadBookings().then(()=>{ if(document.getElementById("view-bk").style.display!=="none") renderBookings(); }); },6000);
 setInterval(tickClock,1000); tickClock();
 </script>
 </body>
