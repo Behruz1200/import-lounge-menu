@@ -24,10 +24,15 @@
     background:var(--card);color:var(--txt);font-size:17px;font-weight:700;font-family:inherit;}
   .opt.save{background:linear-gradient(135deg,var(--ok),#0f7a4f);text-align:center;}
   .opt.link{background:#2a2f3a;text-align:center;text-decoration:none;}
-  #payQR{background:#fff;padding:16px;border-radius:16px;width:max-content;margin:6px auto 0;}
-  #payQR img,#payQR canvas{display:block;}
+  #payQR,#paymeQR{background:#fff;border-radius:16px;width:max-content;margin:6px auto 0;}
+  #payQR{padding:16px;} #paymeQR:not(:empty){padding:16px;}
+  #payQR img,#payQR canvas,#paymeQR img,#paymeQR canvas{display:block;}
   .qrhint{text-align:center;color:var(--muted);font-size:13px;margin:10px 0 4px;line-height:1.4;}
-  .payset{margin-top:8px;border-top:1px solid var(--line);padding-top:8px;}
+  .amount-row{display:flex;gap:8px;align-items:stretch;margin-bottom:6px;}
+  .amount-row .fld{flex:1;}
+  .divider{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;font-weight:700;margin:18px 0 6px;}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line);}
+  .payset{margin-top:14px;border-top:1px solid var(--line);padding-top:8px;}
   .payset summary{cursor:pointer;color:var(--muted);font-weight:700;font-size:14px;padding:8px 2px;}
   .tabs{display:flex;gap:8px;}
   .tab{flex:1;text-align:center;padding:12px;border-radius:12px 12px 0 0;background:transparent;border:0;
@@ -107,15 +112,32 @@
 
   <div class="sheet" id="paysheet" onclick="if(event.target===this)closePaySettings()">
     <div class="box">
-      <h3>💳 Оплата картой</h3>
+      <h3>💳 Оплата</h3>
+
+      <!-- Payme: amount-embedded QR (opens Payme app pre-filled) -->
+      <div class="amount-row">
+        <input id="paySum" class="fld" type="number" inputmode="numeric" placeholder="Сумма счёта · Summa (so'm)">
+        <button class="opt save" style="width:auto;margin:0;white-space:nowrap" onclick="makePaymeQR()">Payme QR</button>
+      </div>
+      <div id="paymeQR"></div>
+      <div class="qrhint" id="paymeHint" style="display:none">Гость сканирует — Payme откроется с суммой ✓<br>Mehmon skanerlaydi — Payme summa bilan ochiladi.</div>
+
+      <div class="divider">или перевод на карту · yoki kartaga</div>
+
+      <!-- Card: QR opens the copy-&-paste page -->
       <div id="payQR"></div>
-      <div class="qrhint">Покажите QR гостю — он откроет карту для перевода.<br>Mehmonga QR ni ko'rsating.</div>
+      <div class="qrhint">Гость сканирует, копирует номер и переводит.<br>Mehmon QR ni skanerlab, raqamni nusxalaydi.</div>
+
       <details class="payset">
-        <summary>⚙️ Настройки карты</summary>
+        <summary>⚙️ Настройки</summary>
         <label>Номер карты (UZCARD / HUMO)</label>
         <input id="payNum" class="fld" type="text" inputmode="numeric" placeholder="8600 0000 0000 0000">
         <label>Владелец карты</label>
         <input id="payHolder" class="fld" type="text" placeholder="IMPORT LOUNGE">
+        <label>Payme Merchant ID (для авто-оплаты)</label>
+        <input id="paymeM" class="fld" type="text" placeholder="напр. 587f72c72cac0d162c722ae2">
+        <label>Payme account field</label>
+        <input id="paymeField" class="fld" type="text" placeholder="order_id">
         <button class="opt save" onclick="savePaySettings()">💾 Сохранить</button>
       </details>
       <a class="opt link" id="payOpen" href="pay.html" target="_blank" rel="noopener">🔗 Открыть страницу оплаты</a>
@@ -256,16 +278,37 @@ async function openPaySettings(){
   buildPayQR();
   try{ const r=await fetch(base+"/pay.json",{cache:"no-store"}); const p=(await r.json())||{};
     document.getElementById("payNum").value=p.number||"";
-    document.getElementById("payHolder").value=p.holder||""; }catch(e){}
+    document.getElementById("payHolder").value=p.holder||"";
+    document.getElementById("paymeM").value=p.payme_m||"";
+    document.getElementById("paymeField").value=p.payme_field||""; }catch(e){}
+  // reset any previous Payme QR
+  document.getElementById("paymeQR").innerHTML=""; document.getElementById("paymeHint").style.display="none";
+  document.getElementById("paySum").value="";
   document.getElementById("paysheet").classList.add("show");
 }
 function closePaySettings(){ document.getElementById("paysheet").classList.remove("show"); }
 async function savePaySettings(){
   const number=(document.getElementById("payNum").value||"").trim();
   const holder=(document.getElementById("payHolder").value||"").trim().toUpperCase();
+  const payme_m=(document.getElementById("paymeM").value||"").trim();
+  const payme_field=(document.getElementById("paymeField").value||"").trim();
   try{ await fetch(base+"/pay.json",{method:"PUT",
-    body:JSON.stringify({number,holder})}); }catch(e){}
+    body:JSON.stringify({number,holder,payme_m,payme_field})}); }catch(e){}
   closePaySettings();
+}
+function makePaymeQR(){
+  const m=(document.getElementById("paymeM").value||"").trim();
+  const field=(document.getElementById("paymeField").value||"order_id").trim()||"order_id";
+  const som=parseInt((document.getElementById("paySum").value||"").replace(/\D/g,""),10);
+  if(!m){ alert("Сначала укажите Payme Merchant ID в ⚙️ Настройках и сохраните."); return; }
+  if(!som||som<1){ document.getElementById("paySum").focus(); return; }
+  const amount=som*100;                       // Payme amount is in tiyin (so'm × 100)
+  const orderId=Date.now().toString().slice(-8);
+  const link="https://checkout.paycom.uz/"+btoa(`m=${m};ac.${field}=${orderId};a=${amount}`);
+  const box=document.getElementById("paymeQR"); box.innerHTML="";
+  try{ new QRCode(box,{text:link,width:240,height:240,correctLevel:QRCode.CorrectLevel.M}); }
+  catch(e){ box.textContent="QR недоступен"; }
+  document.getElementById("paymeHint").style.display="block";
 }
 function startCustom(){
   const el=document.getElementById("customMin"); const v=parseInt(el.value,10);
