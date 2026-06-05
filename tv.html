@@ -102,9 +102,11 @@
 <script>
 const FB="https://import-lounge-default-rtdb.firebaseio.com";
 const base=FB.replace(/\/$/,"");
-const COAL={light:20*60000, medium:15*60000, strong:10*60000, test:5000};
-const STR_LABEL={light:"Лёгкий 🌿", medium:"Средний ⚖️", strong:"Крепкий 🔥", test:"Тест 🧪"};
+const COAL={light:20*60000, medium:15*60000, strong:10*60000};
+const STR_LABEL={light:"Лёгкий 🌿", medium:"Средний ⚖️", strong:"Крепкий 🔥"};
 const SESSION=75*60000;
+function intvOf(s){ return (s&&s.str==="custom"&&s.mins)?s.mins*60000:(COAL[s&&s.str]||COAL.medium); }
+function strLabel(s){ return (s&&s.str==="custom")?("Своё "+(s.mins||"?")+" мин ⏱"):(STR_LABEL[s&&s.str]||"Средний"); }
 let sessions={}, orders={}, bookings={}, calls={}, pend={}, lastDue={}, seen=new Set(), first=true;
 
 function fmt(ms){ if(ms<0)ms=0; const s=Math.floor(ms/1000); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
@@ -147,10 +149,10 @@ function renderCoal(){
   const empty=document.getElementById("empty");
   if(!ids.length){ grid.style.display="none"; grid.innerHTML=""; empty.style.display="flex"; return; }
   grid.style.display="grid"; empty.style.display="none";
-  ids.sort((a,b)=>((sessions[a].coal+COAL[sessions[a].str||"medium"])-now)-((sessions[b].coal+COAL[sessions[b].str||"medium"])-now));
+  ids.sort((a,b)=>((sessions[a].coal+intvOf(sessions[a]))-now)-((sessions[b].coal+intvOf(sessions[b]))-now));
   grid.innerHTML="";
   ids.forEach(id=>{
-    const s=sessions[id]; const intv=COAL[s.str||"medium"];
+    const s=sessions[id]; const intv=intvOf(s);
     const remain=(s.coal+intv)-now, sessRemain=(s.start+SESSION)-now;
     const due=remain<=0; let cls="ok"; if(due)cls="due"; else if(remain<=120000)cls="soon";
     if(due && !lastDue[id]) beep(880); lastDue[id]=due;
@@ -158,7 +160,7 @@ function renderCoal(){
     const t=document.createElement("div"); t.className="tile "+cls;
     t.innerHTML=`<div class="tname">${s.name||("Стол "+id)}</div>
       ${hk?`<div class="hk">💨 ${hk}</div>`:""}
-      <div class="str">${STR_LABEL[s.str||"medium"]||"Средний"}</div>
+      <div class="str">${strLabel(s)}</div>
       <div class="count">${due?"УГЛИ":fmt(remain)}</div>
       <div class="cap">${due?"🔥 поменять угли":"до смены углей"}</div>
       <div class="sess">Сеанс: ${fmt(Math.max(0,now-s.start))} ${sessRemain<=0?'<span class="end">· завершается</span>':(sessRemain<=10*60000?'<span class="end">· скоро конец</span>':'')}</div>`;

@@ -78,14 +78,20 @@
       <button class="opt" onclick="startHookah('light')">🌿 Лёгкий — угли каждые 20 мин</button>
       <button class="opt" onclick="startHookah('medium')">⚖️ Средний — угли каждые 15 мин</button>
       <button class="opt" onclick="startHookah('strong')">🔥 Крепкий — угли каждые 10 мин</button>
-      <button class="opt" onclick="startHookah('test')">🧪 Тест — угли через 5 сек</button>
+      <div style="display:flex;gap:8px;align-items:stretch;margin-top:4px">
+        <input id="customMin" type="number" min="1" max="120" inputmode="numeric" placeholder="Своё, мин"
+          style="flex:1;padding:15px;border-radius:12px;border:1px solid var(--line);background:var(--card);
+          color:var(--txt);font-size:16px;font-weight:700;font-family:inherit;">
+        <button class="opt" style="width:auto;margin:0;white-space:nowrap" onclick="startCustom()">⏱ Старт</button>
+      </div>
     </div>
   </div>
 
 <script>
 const FB="https://import-lounge-default-rtdb.firebaseio.com";
 const base=FB.replace(/\/$/,"");
-const STR={light:"Лёгкий 🌿",medium:"Средний ⚖️",strong:"Крепкий 🔥",test:"Тест 🧪 (5 сек)"};
+const STR={light:"Лёгкий 🌿",medium:"Средний ⚖️",strong:"Крепкий 🔥"};
+function strLabel(s){ return s.str==="custom" ? ("Своё "+(s.mins||"?")+" мин ⏱") : (STR[s.str]||""); }
 let orders={}, sessions={}, pending={}, done={}, calls={}, bookings={}, seen=new Set(), firstLoad=true, pickTable=null;
 function pendCount(id){ return (((pending[id]||{}).items)||[]).reduce((s,i)=>s+(i.q||1),0); }
 
@@ -178,7 +184,7 @@ function renderHk(){
     const row=document.createElement("div"); row.className="hkrow"+(s?" active":"");
     const info=document.createElement("div"); info.className="nm";
     let sub;
-    if(s) sub=`${STR[s.str]||""} · идёт ${ago(s.start)}`;
+    if(s) sub=`${strLabel(s)} · идёт ${ago(s.start)}`;
     else { const its=((p&&p.items)||[]).map(it=>it.n+(it.q>1?" ×"+it.q:"")).join(", "); sub="🧾 в чеке: "+(its||"кальян"); }
     info.innerHTML=name+`<small>${sub}</small>`;
     row.appendChild(info);
@@ -196,10 +202,17 @@ function renderHk(){
 function openPick(t){ pickTable=t; document.getElementById("sheetTitle").textContent="Крепость · "+t.name;
   document.getElementById("sheet").classList.add("show"); }
 function closeSheet(){ document.getElementById("sheet").classList.remove("show"); }
-async function startHookah(str){
+function startCustom(){
+  const el=document.getElementById("customMin"); const v=parseInt(el.value,10);
+  if(!v||v<1){ el.focus(); el.style.borderColor="var(--gold)"; return; }
+  el.value=""; el.style.borderColor="var(--line)";
+  startHookah("custom", v);
+}
+async function startHookah(str, customMins){
   if(!pickTable) return; const now=Date.now(); const id=pickTable.id;
   const hk=(((pending[id]||{}).items||[]).map(i=>i.n).filter(Boolean).join(", "))||"";
   sessions[id]={str,name:pickTable.name,start:now,coal:now,hk};
+  if(str==="custom") sessions[id].mins=customMins;
   try{ await fetch(base+"/hookah/"+id+".json",{method:"PUT",
     body:JSON.stringify(sessions[id])}); }catch(e){}
   delete done[id]; fetch(base+"/hookah_done/"+id+".json",{method:"DELETE"}).catch(()=>{});
