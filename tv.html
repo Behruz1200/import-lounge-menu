@@ -50,8 +50,8 @@
 
 <script>
 const FB="https://import-lounge-default-rtdb.firebaseio.com";
-const COAL={light:20*60000, medium:15*60000, strong:10*60000};
-const STR_LABEL={light:"Лёгкий 🌿", medium:"Средний ⚖️", strong:"Крепкий 🔥"};
+const COAL={light:20*60000, medium:15*60000, strong:10*60000, test:5000};
+const STR_LABEL={light:"Лёгкий 🌿", medium:"Средний ⚖️", strong:"Крепкий 🔥", test:"Тест 🧪"};
 const SESSION=75*60000;          // total session length to flag "ending"
 let sessions={};                 // tableId -> {str,name,start,coal}
 let lastDue={};                  // tableId -> bool, to beep only on transition

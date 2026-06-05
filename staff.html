@@ -76,13 +76,14 @@
       <button class="opt" onclick="startHookah('light')">🌿 Лёгкий — угли каждые 20 мин</button>
       <button class="opt" onclick="startHookah('medium')">⚖️ Средний — угли каждые 15 мин</button>
       <button class="opt" onclick="startHookah('strong')">🔥 Крепкий — угли каждые 10 мин</button>
+      <button class="opt" onclick="startHookah('test')">🧪 Тест — угли через 5 сек</button>
     </div>
   </div>
 
 <script>
 const FB="https://import-lounge-default-rtdb.firebaseio.com";
 const base=FB.replace(/\/$/,"");
-const STR={light:"Лёгкий 🌿",medium:"Средний ⚖️",strong:"Крепкий 🔥"};
+const STR={light:"Лёгкий 🌿",medium:"Средний ⚖️",strong:"Крепкий 🔥",test:"Тест 🧪 (5 сек)"};
 let orders={}, sessions={}, pending={}, done={}, calls={}, seen=new Set(), firstLoad=true, pickTable=null;
 function pendCount(id){ return (((pending[id]||{}).items)||[]).reduce((s,i)=>s+(i.q||1),0); }
 
