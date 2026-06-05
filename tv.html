@@ -32,7 +32,8 @@
   .tile.due{border-color:var(--gold);background:linear-gradient(160deg,#3a1418,#1a0d10);animation:pulse 1s infinite;}
   .tile.due .count{color:#ff5a5a;} .tile.due .cap{color:#ff8a8a;font-weight:800;}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0);}50%{box-shadow:0 0 28px 4px rgba(239,68,68,.55);}}
-  .empty{text-align:center;color:var(--muted);font-size:20px;padding:70px 20px;}
+  .empty{flex:1;min-height:0;display:none;align-items:center;justify-content:center;
+    text-align:center;color:var(--muted);font-size:clamp(22px,3vw,40px);font-weight:700;}
   .end{color:var(--warn);font-weight:700;}
   /* ---- side (orders + bookings) ---- */
   .side{width:430px;flex:0 0 430px;border-left:1px solid var(--line);background:#0e0f14;
@@ -126,7 +127,9 @@ let tileEls={};
 function renderCoal(){   // rebuild the grid only when called (from loadAll, every 4s)
   const now=Date.now(); const grid=document.getElementById("grid");
   const ids=Object.keys(sessions||{}).filter(id=>sessions[id]);
-  document.getElementById("empty").style.display=ids.length?"none":"block";
+  const empty=document.getElementById("empty");
+  if(!ids.length){ grid.style.display="none"; grid.innerHTML=""; tileEls={}; empty.style.display="flex"; return; }
+  grid.style.display="grid"; empty.style.display="none";
   ids.sort((a,b)=>((sessions[a].coal+COAL[sessions[a].str||"medium"])-now)-((sessions[b].coal+COAL[sessions[b].str||"medium"])-now));
   grid.innerHTML=""; tileEls={};
   ids.forEach(id=>{
@@ -150,30 +153,28 @@ function layoutCoal(){
   grid.style.height=h+"px";
   const gap=12, w=grid.clientWidth;
   if(w<=0||h<=0) return;
-  // pick the column count that best fills the area (tiles ~4:3)
-  let cols;
-  if(n<=3){ cols=n; }            // 1–3 hookahs -> one big full-height row, fills the screen
-  else {
-    let best=1, bestScore=1e9;
-    for(let c=1;c<=n;c++){
-      const r=Math.ceil(n/c);
-      const cw=(w-(c-1)*gap)/c, ch=(h-(r-1)*gap)/r;
-      if(cw<=0||ch<=0) continue;
-      const score=Math.abs((cw/ch)-1.35) + (r*c-n)*0.08;   // close to 1.35 ratio, few empty cells
-      if(score<bestScore){ bestScore=score; best=c; }
-    }
-    cols=best;
+  // largest tile up to the max card size that still fits everything on screen
+  const maxW=320, maxH=200;
+  let bestW=0, cols=1;
+  for(let c=1;c<=n;c++){
+    const r=Math.ceil(n/c);
+    const wFit=(w-(c-1)*gap)/c;
+    const hFit=(h-(r-1)*gap)/r;
+    const tw=Math.min(wFit, hFit*(maxW/maxH), maxW);
+    if(tw>bestW){ bestW=tw; cols=c; }
   }
-  const rows=Math.ceil(n/cols);
-  grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
-  grid.style.gridTemplateRows=`repeat(${rows},1fr)`;
-  const ch=(h-(rows-1)*gap)/rows, cw=(w-(cols-1)*gap)/cols;
-  // fonts scale with the cell — big when few tiles, small when many
-  const cnt=Math.max(18, Math.min(ch*0.36, cw*0.30, 220));
-  const nm =Math.max(13, Math.min(ch*0.16, cw*0.16, 80));
-  const sm =Math.max(9,  Math.min(ch*0.075, cw*0.10, 34));
+  const tileW=Math.max(60,bestW), tileH=tileW*(maxH/maxW);
+  grid.style.gridTemplateRows="";
+  grid.style.gridTemplateColumns=`repeat(${cols}, ${tileW}px)`;
+  grid.style.gridAutoRows=`${tileH}px`;
+  grid.style.justifyContent="center";
+  grid.style.alignContent="center";
+  // fonts scale with the (capped) tile size — cap at the nice original sizes
+  const cnt=Math.max(16, Math.min(tileH*0.28, 56));
+  const nm =Math.max(12, Math.min(tileH*0.12, 24));
+  const sm =Math.max(9,  Math.min(tileH*0.065, 13));
   Object.values(tileEls).forEach(el=>{
-    el.style.padding=Math.max(6,ch*0.05)+"px "+Math.max(8,cw*0.05)+"px";
+    el.style.padding=Math.max(8,tileH*0.08)+"px "+Math.max(10,tileW*0.06)+"px";
     el.querySelector(".tname").style.fontSize=nm+"px";
     el.querySelector(".count").style.fontSize=cnt+"px";
     el.querySelector(".str").style.fontSize=sm+"px";
