@@ -19,7 +19,7 @@
   .legend{flex:0 0 auto;display:flex;gap:14px;margin-bottom:12px;color:var(--muted);font-size:13px;flex-wrap:wrap;}
   .legend b{color:var(--txt);}
   .grid{flex:1;min-height:0;overflow:hidden;display:grid;gap:18px;align-content:start;
-    transform-origin:top center;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}
+    transform-origin:top left;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}
   .tile{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:20px 22px;
     display:flex;flex-direction:column;justify-content:center;align-items:flex-start;}
   .tile .tname{font-size:26px;font-weight:800;line-height:1.1;}
@@ -148,11 +148,24 @@ function renderCoal(){
   fitGrid();
 }
 
-function fitGrid(){   // uniformly zoom the whole board down so all cards fit — never above 100%
+function fitGrid(){   // fit the whole board on screen — no scroll, cards never bigger than 100%
   const grid=document.getElementById("grid");
-  grid.style.transform="none";
-  const avail=grid.clientHeight, content=grid.scrollHeight;
-  if(content>avail+1 && content>0) grid.style.transform="scale("+(avail/content)+")";
+  const n=grid.children.length; if(!n){ return; }
+  // reset to natural full-width auto-fill layout
+  grid.style.transform="none"; grid.style.width="100%"; grid.style.height="";
+  grid.style.gridTemplateColumns="repeat(auto-fill,minmax(300px,1fr))";
+  // available height from the grid's top to the bottom of the viewport
+  const top=grid.getBoundingClientRect().top;
+  const avail=Math.max(0, window.innerHeight - top - 16);
+  grid.style.height=avail+"px";          // constrain the box so we can measure overflow
+  const content=grid.scrollHeight;
+  if(content>avail+1){
+    const s=avail/content;
+    const cols=getComputedStyle(grid).gridTemplateColumns.split(" ").length;
+    grid.style.gridTemplateColumns="repeat("+cols+",1fr)";  // freeze cols so width-comp keeps them
+    grid.style.width=(100/s)+"%";          // pre-widen so it refills the screen after scaling
+    grid.style.transform="scale("+s+")";   // uniform zoom (preserves the card look exactly)
+  }
 }
 window.addEventListener("resize", fitGrid);
 
