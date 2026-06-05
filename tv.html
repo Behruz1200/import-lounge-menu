@@ -10,22 +10,23 @@
   *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
   html,body{height:100%;}
   body{background:var(--bg);color:var(--txt);display:flex;height:100vh;overflow:hidden;}
-  /* ---- main (coal) ---- */
-  .main{flex:1;min-width:0;padding:22px 26px;overflow-y:auto;}
-  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
-  header h1{font-size:28px;font-weight:800;letter-spacing:.5px;}
+  /* ---- main (coal) — fits the screen, no scroll ---- */
+  .main{flex:1;min-width:0;padding:16px 20px;overflow:hidden;display:flex;flex-direction:column;}
+  header{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  header h1{font-size:26px;font-weight:800;letter-spacing:.5px;}
   header h1 .r{color:var(--gold);}
-  header .clock{font-size:26px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;}
-  .legend{display:flex;gap:16px;margin-bottom:16px;color:var(--muted);font-size:14px;flex-wrap:wrap;}
+  header .clock{font-size:24px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .legend{flex:0 0 auto;display:flex;gap:14px;margin-bottom:12px;color:var(--muted);font-size:13px;flex-wrap:wrap;}
   .legend b{color:var(--txt);}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
-  .tile{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:18px 20px;overflow:hidden;}
-  .tile .tname{font-size:24px;font-weight:800;}
-  .tile .str{display:inline-block;margin-top:6px;font-size:13px;font-weight:700;padding:4px 12px;border-radius:20px;
+  .grid{flex:1;min-height:0;display:grid;gap:12px;}   /* columns/rows set by JS */
+  .tile{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:12px;overflow:hidden;
+    display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-height:0;}
+  .tile .tname{font-size:22px;font-weight:800;line-height:1.1;}
+  .tile .str{display:inline-block;margin-top:5px;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;
     background:rgba(255,255,255,.06);color:var(--muted);}
-  .tile .count{font-size:56px;font-weight:800;font-variant-numeric:tabular-nums;margin:8px 0 2px;letter-spacing:1px;}
-  .tile .cap{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
-  .tile .sess{margin-top:10px;font-size:14px;color:var(--muted);}
+  .tile .count{font-size:48px;font-weight:800;font-variant-numeric:tabular-nums;margin:6px 0 2px;letter-spacing:1px;line-height:1;}
+  .tile .cap{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .tile .sess{margin-top:8px;font-size:12px;color:var(--muted);}
   .tile.ok{border-color:#26303f;}
   .tile.soon{border-color:var(--warn);}
   .tile.due{border-color:var(--gold);background:linear-gradient(160deg,#3a1418,#1a0d10);animation:pulse 1s infinite;}
@@ -137,8 +138,40 @@ function renderCoal(){   // rebuild the grid only when called (from loadAll, eve
       <div class="sess"></div>`;
     grid.appendChild(t); tileEls[id]=t;
   });
+  layoutCoal();
   tickCoal();
 }
+function layoutCoal(){
+  const grid=document.getElementById("grid");
+  const n=Object.keys(tileEls).length; if(!n) return;
+  const gap=12, w=grid.clientWidth, h=grid.clientHeight;
+  if(w<=0||h<=0) return;
+  // pick the column count that best fills the area (tiles ~4:3)
+  let best=1, bestScore=1e9;
+  for(let c=1;c<=n;c++){
+    const r=Math.ceil(n/c);
+    const cw=(w-(c-1)*gap)/c, ch=(h-(r-1)*gap)/r;
+    if(cw<=0||ch<=0) continue;
+    const score=Math.abs((cw/ch)-1.35) + (r*c-n)*0.05;   // close to 1.35 ratio, few empty cells
+    if(score<bestScore){ bestScore=score; best=c; }
+  }
+  const cols=best, rows=Math.ceil(n/cols);
+  grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  grid.style.gridTemplateRows=`repeat(${rows},1fr)`;
+  const ch=(h-(rows-1)*gap)/rows, cw=(w-(cols-1)*gap)/cols;
+  const cnt=Math.max(16,Math.min(64,ch*0.34));
+  const nm =Math.max(12,Math.min(26,ch*0.15));
+  const sm =Math.max(9, Math.min(14,ch*0.085));
+  Object.values(tileEls).forEach(el=>{
+    el.style.padding=Math.max(6,ch*0.05)+"px "+Math.max(8,cw*0.05)+"px";
+    el.querySelector(".tname").style.fontSize=nm+"px";
+    el.querySelector(".count").style.fontSize=cnt+"px";
+    el.querySelector(".str").style.fontSize=sm+"px";
+    el.querySelector(".cap").style.fontSize=sm+"px";
+    el.querySelector(".sess").style.fontSize=sm+"px";
+  });
+}
+window.addEventListener("resize", layoutCoal);
 function tickCoal(){     // update countdowns in place (every 1s, lightweight)
   const now=Date.now();
   Object.keys(tileEls).forEach(id=>{
